@@ -23,6 +23,7 @@ export const useOrders = () => {
 
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>([]);
+  console.log(orders);
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -83,6 +84,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       distance: 1.8,
       estimatedTime: 12,
     },
+
   ];
 
   const fetchOrders = async () => {

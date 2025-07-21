@@ -6,6 +6,7 @@ import {
   Platform,
   Alert,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import {
   TextInput,
@@ -21,8 +22,10 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const LoginScreen: React.FC = () => {
   const [partnerId, setPartnerId] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showTestUsers, setShowTestUsers] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const theme = useTheme();
 
@@ -40,13 +43,18 @@ const LoginScreen: React.FC = () => {
       Alert.alert('Error', 'Please enter your Delivery Partner ID');
       return;
     }
+    if (!password.trim()) {
+      Alert.alert('Error', 'Please enter your password');
+      return;
+    }
 
     setLoading(true);
     try {
-      const success = await login(partnerId.trim());
+      // Pass partnerId and password to your login (adjust backend accordingly)
+      const success = await login(partnerId.trim(), password.trim());
       if (!success) {
         Alert.alert(
-          'Invalid ID', 
+          'Invalid Credentials',
           'Please use one of the test user IDs shown below:\n\n' +
           testUsers.map(user => `${user.id} - ${user.name}`).join('\n')
         );
@@ -81,7 +89,7 @@ const LoginScreen: React.FC = () => {
           <Surface style={styles.loginCard} elevation={4}>
             <Text style={styles.welcomeText}>Welcome Back!</Text>
             <Text style={styles.instructionText}>
-              Enter your Delivery Partner ID to access your dashboard
+              Enter your Delivery Partner ID and password to access your dashboard
             </Text>
 
             <TextInput
@@ -93,6 +101,23 @@ const LoginScreen: React.FC = () => {
               autoCapitalize="none"
               autoCorrect={false}
               placeholder="Enter your partner ID"
+            />
+
+            <TextInput
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              mode="outlined"
+              style={styles.input}
+              secureTextEntry={!showPassword}
+              placeholder="Enter your password"
+              right={
+                <TextInput.Icon
+                  name={showPassword ? 'visibility-off' : 'visibility'}
+                  onPress={() => setShowPassword(!showPassword)}
+                />
+
+              }
             />
 
             <Button
@@ -185,7 +210,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   loginCard: {
-    padding: 24,
+    padding: 20,
     borderRadius: 12,
     backgroundColor: 'white',
   },
@@ -203,7 +228,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   input: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   loginButton: {
     marginTop: 8,
@@ -271,4 +296,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LoginScreen; 
+export default LoginScreen;

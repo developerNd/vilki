@@ -26,6 +26,9 @@
     "react-native-paper": "^5.12.3",
     "react-native-permissions": "^4.1.5",
     "react-native-ratings": "^8.1.0",
+    "react-native-safe-area-context": "^5.5.2",
+    "react-native-screens": "^4.13.1",
+    "react-native-toast-message": "^2.3.3",
     "react-native-vector-icons": "^10.0.3"
   },
   "devDependencies": {
