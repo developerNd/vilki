@@ -7,6 +7,7 @@ import {
   Alert,
   ScrollView,
   TouchableOpacity,
+  Image, // <-- Import Image here
 } from 'react-native';
 import {
   TextInput,
@@ -18,7 +19,6 @@ import {
   Title,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const LoginScreen: React.FC = () => {
   const [partnerId, setPartnerId] = useState('');
@@ -29,7 +29,6 @@ const LoginScreen: React.FC = () => {
   const { login } = useAuth();
   const theme = useTheme();
 
-  // Test users for easy testing
   const testUsers = [
     { id: 'DP001', name: 'Rahul Kumar', location: 'Connaught Place' },
     { id: 'DP002', name: 'Priya Sharma', location: 'Lajpat Nagar' },
@@ -50,7 +49,6 @@ const LoginScreen: React.FC = () => {
 
     setLoading(true);
     try {
-      // Pass partnerId and password to your login (adjust backend accordingly)
       const success = await login(partnerId.trim(), password.trim());
       if (!success) {
         Alert.alert(
@@ -79,7 +77,11 @@ const LoginScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
           <View style={styles.logoContainer}>
-            <Icon name="local-shipping" size={80} color={theme.colors.primary} />
+            {/* Replace Icon with your custom logo image */}
+            <Image
+              source={require('../../assets/transparent_logo.png')} // Adjust path if needed
+              style={styles.logo}
+            />
             <Text style={[styles.title, { color: theme.colors.primary }]}>
               Vilki Delivery
             </Text>
@@ -116,7 +118,6 @@ const LoginScreen: React.FC = () => {
                   name={showPassword ? 'visibility-off' : 'visibility'}
                   onPress={() => setShowPassword(!showPassword)}
                 />
-
               }
             />
 
@@ -146,7 +147,7 @@ const LoginScreen: React.FC = () => {
                   <Text style={styles.testUsersSubtitle}>
                     Click on any ID to auto-fill:
                   </Text>
-                  {testUsers.map((user) => (
+                  {testUsers.map(user => (
                     <Button
                       key={user.id}
                       mode="outlined"
@@ -155,7 +156,9 @@ const LoginScreen: React.FC = () => {
                       contentStyle={styles.testUserButtonContent}
                     >
                       <View style={styles.testUserInfo}>
-                        <Text style={styles.testUserId}>{user.id}</Text>
+                        <Text style={[styles.testUserId, { color: theme.colors.primary }]}>
+                          {user.id}
+                        </Text>
                         <Text style={styles.testUserName}>{user.name}</Text>
                         <Text style={styles.testUserLocation}>{user.location}</Text>
                       </View>
@@ -184,7 +187,7 @@ const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#E3F2FD', // light blue background
   },
   scrollContent: {
     flexGrow: 1,
@@ -199,20 +202,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 30,
   },
+  logo: {
+    width: 80,
+    height: 80,
+    resizeMode: 'contain',
+    marginBottom: 10,
+  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     marginTop: 16,
   },
   subtitle: {
-    fontSize: 18,
-    color: '#666',
-    marginTop: 4,
+    fontSize: 20,
+    color: '#1976D2', // darker blue
+    marginTop: 2,
   },
   loginCard: {
     padding: 20,
     borderRadius: 12,
-    backgroundColor: 'white',
+    backgroundColor: '#ffffff',
   },
   welcomeText: {
     fontSize: 24,
@@ -222,7 +231,7 @@ const styles = StyleSheet.create({
   },
   instructionText: {
     fontSize: 14,
-    color: '#666',
+    color: '#1565C0',
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 20,
@@ -268,7 +277,6 @@ const styles = StyleSheet.create({
   testUserId: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#2196F3',
   },
   testUserName: {
     fontSize: 12,
@@ -282,7 +290,7 @@ const styles = StyleSheet.create({
   },
   helpText: {
     fontSize: 12,
-    color: '#666',
+    color: '#0D47A1',
     textAlign: 'center',
     marginTop: 16,
   },
@@ -292,8 +300,16 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: '#999',
+    color: '#90CAF9',
   },
+  logo: {
+    width: 80,
+    height: 80,
+    borderRadius: 40, // half of width/height to make circle
+    resizeMode: 'cover', // use 'cover' so it fills the circle nicely
+    marginBottom: 10,
+  },
+
 });
 
 export default LoginScreen;

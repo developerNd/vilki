@@ -65,7 +65,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
 
-      // Assuming your Strapi login response returns partner data under data
       const partner: DeliveryPartner = data.data;
 
       await AsyncStorage.setItem('deliveryPartner', JSON.stringify(partner));
@@ -99,7 +98,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       setDeliveryPartner(updatedPartner);
       await AsyncStorage.setItem('deliveryPartner', JSON.stringify(updatedPartner));
-      // Optionally, also PATCH updated location to backend
       try {
         await fetch(`${API_BASE_URL}/api/delivery-partners/${deliveryPartner.id}`, {
           method: 'PUT',
