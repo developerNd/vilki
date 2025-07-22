@@ -82,9 +82,7 @@ const LoginScreen: React.FC = () => {
               source={require('../../assets/transparent_logo.png')} // Adjust path if needed
               style={styles.logo}
             />
-            <Text style={[styles.title, { color: theme.colors.primary }]}>
-              Vilki Delivery
-            </Text>
+
             <Text style={styles.subtitle}>Partner App</Text>
           </View>
 
@@ -303,9 +301,9 @@ const styles = StyleSheet.create({
     color: '#90CAF9',
   },
   logo: {
-    width: 80,
-    height: 80,
-    borderRadius: 40, // half of width/height to make circle
+    width: 100,
+    height: 100,
+    borderRadius: 80, // half of width/height to make circle
     resizeMode: 'cover', // use 'cover' so it fills the circle nicely
     marginBottom: 10,
   },
