@@ -119,14 +119,14 @@ const OrdersScreen: React.FC = () => {
             <Icon name="location-on" size={16} color="#FF5722" />
             <Text style={styles.addressLabel}>Pickup:</Text>
             <Text style={styles.addressText} numberOfLines={2}>
-              {item.pickupAddress.address}
+              {item.pickupAddress?.address ?? 'N/A'}
             </Text>
           </View>
           <View style={styles.addressRow}>
             <Icon name="location-on" size={16} color="#4CAF50" />
             <Text style={styles.addressLabel}>Delivery:</Text>
             <Text style={styles.addressText} numberOfLines={2}>
-              {item.deliveryAddress.address}
+              {item.deliveryAddress?.address ?? 'N/A'}
             </Text>
           </View>
         </View>
@@ -134,7 +134,9 @@ const OrdersScreen: React.FC = () => {
         <View style={styles.orderDetails}>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Items:</Text>
-            <Text style={styles.detailValue}>{item.items.length} items</Text>
+            <Text style={styles.detailValue}>
+              {(item.items?.length ?? 0)} items
+            </Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Amount:</Text>
@@ -346,4 +348,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default OrdersScreen; 
+export default OrdersScreen;

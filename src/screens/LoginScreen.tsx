@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// screens/LoginScreen.tsx
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,8 +7,7 @@ import {
   Platform,
   Alert,
   ScrollView,
-  TouchableOpacity,
-  Image, // <-- Import Image here
+  Image,
 } from 'react-native';
 import {
   TextInput,
@@ -16,9 +16,9 @@ import {
   Surface,
   useTheme,
   Card,
-  Title,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 
 const LoginScreen: React.FC = () => {
   const [partnerId, setPartnerId] = useState('');
@@ -26,7 +26,9 @@ const LoginScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showTestUsers, setShowTestUsers] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
+
+  const { login, isAuthenticated } = useAuth();
+  const navigation = useNavigation();
   const theme = useTheme();
 
   const testUsers = [
@@ -36,6 +38,18 @@ const LoginScreen: React.FC = () => {
     { id: 'DP004', name: 'Sneha Gupta', location: 'Gurgaon' },
     { id: 'DP005', name: 'Vikram Singh', location: 'Noida' },
   ];
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Reset navigation stack and navigate to Dashboard (Main Tab)
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Main' }], // make sure your main screen is named "Main"
+        })
+      );
+    }
+  }, [isAuthenticated, navigation]);
 
   const handleLogin = async () => {
     if (!partnerId.trim()) {
@@ -54,7 +68,7 @@ const LoginScreen: React.FC = () => {
         Alert.alert(
           'Invalid Credentials',
           'Please use one of the test user IDs shown below:\n\n' +
-          testUsers.map(user => `${user.id} - ${user.name}`).join('\n')
+          testUsers.map((user) => `${user.id} - ${user.name}`).join('\n')
         );
       }
     } catch (error) {
@@ -74,15 +88,13 @@ const LoginScreen: React.FC = () => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.content}>
           <View style={styles.logoContainer}>
-            {/* Replace Icon with your custom logo image */}
             <Image
-              source={require('../../assets/transparent_logo.png')} // Adjust path if needed
+              source={require('../../assets/transparent_logo.png')}
               style={styles.logo}
             />
-
             <Text style={styles.subtitle}>Partner App</Text>
           </View>
 
@@ -101,6 +113,12 @@ const LoginScreen: React.FC = () => {
               autoCapitalize="none"
               autoCorrect={false}
               placeholder="Enter your partner ID"
+              returnKeyType="next"
+              onSubmitEditing={() => {
+                // Focus password input on submit partner ID
+                passwordInputRef.current?.focus();
+              }}
+              blurOnSubmit={false}
             />
 
             <TextInput
@@ -113,10 +131,13 @@ const LoginScreen: React.FC = () => {
               placeholder="Enter your password"
               right={
                 <TextInput.Icon
-                  name={showPassword ? 'visibility-off' : 'visibility'}
+                  name={showPassword ? 'eye-off' : 'eye'}
                   onPress={() => setShowPassword(!showPassword)}
                 />
               }
+              ref={passwordInputRef}
+              returnKeyType="done"
+              onSubmitEditing={handleLogin}
             />
 
             <Button
@@ -141,11 +162,8 @@ const LoginScreen: React.FC = () => {
             {showTestUsers && (
               <Card style={styles.testUsersCard} mode="outlined">
                 <Card.Content>
-                  <Title style={styles.testUsersTitle}>Test User IDs</Title>
-                  <Text style={styles.testUsersSubtitle}>
-                    Click on any ID to auto-fill:
-                  </Text>
-                  {testUsers.map(user => (
+                  <Text style={styles.testUsersSubtitle}>Click on any ID to auto-fill:</Text>
+                  {testUsers.map((user) => (
                     <Button
                       key={user.id}
                       mode="outlined"
@@ -166,15 +184,11 @@ const LoginScreen: React.FC = () => {
               </Card>
             )}
 
-            <Text style={styles.helpText}>
-              Don't have a partner ID? Contact your administrator
-            </Text>
+            <Text style={styles.helpText}>Don't have a partner ID? Contact your administrator</Text>
           </Surface>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              © 2024 Vilki Delivery. All rights reserved.
-            </Text>
+            <Text style={styles.footerText}>© 2024 Vilki Delivery. All rights reserved.</Text>
           </View>
         </View>
       </ScrollView>
@@ -182,51 +196,19 @@ const LoginScreen: React.FC = () => {
   );
 };
 
+// Create a ref for password input to enable focusing programmatically
+import { useRef } from 'react';
+const passwordInputRef = React.createRef<any>();
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#E3F2FD', // light blue background
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  logo: {
-    width: 80,
-    height: 80,
-    resizeMode: 'contain',
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginTop: 16,
-  },
-  subtitle: {
-    fontSize: 20,
-    color: '#1976D2', // darker blue
-    marginTop: 2,
-  },
-  loginCard: {
-    padding: 20,
-    borderRadius: 12,
-    backgroundColor: '#ffffff',
-  },
-  welcomeText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
+  container: { flex: 1, backgroundColor: '#E3F2FD' },
+  scrollContent: { flexGrow: 1 },
+  content: { flex: 1, justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 20 },
+  logoContainer: { alignItems: 'center', marginBottom: 30 },
+  logo: { width: 80, height: 80, resizeMode: 'contain', marginBottom: 10 },
+  subtitle: { fontSize: 20, color: '#1976D2', marginTop: 2 },
+  loginCard: { padding: 20, borderRadius: 12, backgroundColor: '#fff' },
+  welcomeText: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 },
   instructionText: {
     fontSize: 14,
     color: '#1565C0',
@@ -234,80 +216,21 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     lineHeight: 20,
   },
-  input: {
-    marginBottom: 16,
-  },
-  loginButton: {
-    marginTop: 8,
-    borderRadius: 8,
-  },
-  loginButtonContent: {
-    paddingVertical: 8,
-  },
-  testUsersButton: {
-    marginTop: 12,
-  },
-  testUsersCard: {
-    marginTop: 16,
-    borderRadius: 8,
-  },
-  testUsersTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  testUsersSubtitle: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 12,
-  },
-  testUserButton: {
-    marginBottom: 8,
-    borderRadius: 8,
-  },
-  testUserButtonContent: {
-    paddingVertical: 8,
-  },
-  testUserInfo: {
-    alignItems: 'flex-start',
-    width: '100%',
-  },
-  testUserId: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  testUserName: {
-    fontSize: 12,
-    color: '#333',
-    marginTop: 2,
-  },
-  testUserLocation: {
-    fontSize: 10,
-    color: '#666',
-    marginTop: 2,
-  },
-  helpText: {
-    fontSize: 12,
-    color: '#0D47A1',
-    textAlign: 'center',
-    marginTop: 16,
-  },
-  footer: {
-    alignItems: 'center',
-    marginTop: 30,
-  },
-  footerText: {
-    fontSize: 12,
-    color: '#90CAF9',
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    borderRadius: 80, // half of width/height to make circle
-    resizeMode: 'cover', // use 'cover' so it fills the circle nicely
-    marginBottom: 10,
-  },
-
+  input: { marginBottom: 16 },
+  loginButton: { marginTop: 8, borderRadius: 8 },
+  loginButtonContent: { paddingVertical: 8 },
+  testUsersButton: { marginTop: 12 },
+  testUsersCard: { marginTop: 16, borderRadius: 8 },
+  testUsersSubtitle: { fontSize: 12, color: '#666', marginBottom: 12 },
+  testUserButton: { marginBottom: 8, borderRadius: 8 },
+  testUserButtonContent: { paddingVertical: 8 },
+  testUserInfo: { alignItems: 'flex-start', width: '100%' },
+  testUserId: { fontSize: 14, fontWeight: 'bold' },
+  testUserName: { fontSize: 12, color: '#333', marginTop: 2 },
+  testUserLocation: { fontSize: 10, color: '#666', marginTop: 2 },
+  helpText: { fontSize: 12, color: '#0D47A1', textAlign: 'center', marginTop: 16 },
+  footer: { alignItems: 'center', marginTop: 30 },
+  footerText: { fontSize: 12, color: '#90CAF9' },
 });
 
 export default LoginScreen;

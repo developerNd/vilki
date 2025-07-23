@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// screens/EarningsScreen.tsx
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -13,17 +14,36 @@ import {
   ActivityIndicator,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
-import { Earnings } from '../types';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+
+interface Earnings {
+  id: string;
+  month: string;
+  year: number;
+  totalOrders: number;
+  totalEarnings: number;
+  bonus: number;
+  deductions: number;
+  netEarnings: number;
+  paid: boolean;
+  paidAt?: string;
+}
 
 const EarningsScreen: React.FC = () => {
   const { deliveryPartner } = useAuth();
   const theme = useTheme();
+
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [earnings, setEarnings] = useState<Earnings[]>([]);
 
-  // Mock earnings data
+  // Memoized month names to avoid re-creation on each render
+  const monthNames = useMemo(() => [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ], []);
+
+  // Mock earnings data (replace with real API fetch)
   const mockEarnings: Earnings[] = [
     {
       id: '1',
@@ -63,14 +83,15 @@ const EarningsScreen: React.FC = () => {
     },
   ];
 
-  useEffect(() => {
-    fetchEarnings();
-  }, []);
-
-  const fetchEarnings = async () => {
+  // Fetch earnings (simulate API call)
+  const fetchEarnings = useCallback(async () => {
     setLoading(true);
     try {
-      // In a real app, this would be an API call
+      // TODO: Replace this with real API fetch call for deliveryPartner.id
+      // e.g., const response = await fetch(`${API_BASE_URL}/earnings/${deliveryPartner?.id}`);
+      // const data = await response.json();
+      // setEarnings(data);
+
       setTimeout(() => {
         setEarnings(mockEarnings);
         setLoading(false);
@@ -79,7 +100,11 @@ const EarningsScreen: React.FC = () => {
       console.error('Error fetching earnings:', error);
       setLoading(false);
     }
-  };
+  }, [mockEarnings]);
+
+  useEffect(() => {
+    fetchEarnings();
+  }, [fetchEarnings]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -87,16 +112,11 @@ const EarningsScreen: React.FC = () => {
     setRefreshing(false);
   };
 
-  const getCurrentMonthEarnings = () => {
+  const getCurrentMonthEarnings = (): Earnings | undefined => {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    
     return earnings.find(
-      earning => earning.month === monthNames[currentMonth] && earning.year === currentYear
+      (e) => e.month === monthNames[currentMonth] && e.year === currentYear
     );
   };
 
@@ -117,11 +137,12 @@ const EarningsScreen: React.FC = () => {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
+      contentContainerStyle={{ paddingBottom: 24 }}
     >
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Earnings Dashboard</Text>
         <Text style={styles.headerSubtitle}>
-          Welcome back, {deliveryPartner?.name}
+          Welcome back, {deliveryPartner?.name || 'Delivery Partner'}
         </Text>
       </View>
 
@@ -130,26 +151,38 @@ const EarningsScreen: React.FC = () => {
           <Card.Content>
             <Title style={styles.currentMonthTitle}>Current Month</Title>
             <View style={styles.earningsGrid}>
-              <View style={styles.earningsItem}>
-                <Icon name="local-shipping" size={24} color="#2196F3" />
-                <Text style={styles.earningsLabel}>Orders</Text>
-                <Text style={styles.earningsValue}>{currentMonthEarnings.totalOrders}</Text>
-              </View>
-              <View style={styles.earningsItem}>
-                <Icon name="account-balance-wallet" size={24} color="#4CAF50" />
-                <Text style={styles.earningsLabel}>Earnings</Text>
-                <Text style={styles.earningsValue}>₹{currentMonthEarnings.totalEarnings}</Text>
-              </View>
-              <View style={styles.earningsItem}>
-                <Icon name="stars" size={24} color="#FF9800" />
-                <Text style={styles.earningsLabel}>Bonus</Text>
-                <Text style={styles.earningsValue}>₹{currentMonthEarnings.bonus}</Text>
-              </View>
-              <View style={styles.earningsItem}>
-                <Icon name="trending-up" size={24} color="#9C27B0" />
-                <Text style={styles.earningsLabel}>Net</Text>
-                <Text style={styles.earningsValue}>₹{currentMonthEarnings.netEarnings}</Text>
-              </View>
+              {[
+                {
+                  icon: 'local-shipping',
+                  label: 'Orders',
+                  value: currentMonthEarnings.totalOrders,
+                  color: '#2196F3',
+                },
+                {
+                  icon: 'account-balance-wallet',
+                  label: 'Earnings',
+                  value: `₹${currentMonthEarnings.totalEarnings}`,
+                  color: '#4CAF50',
+                },
+                {
+                  icon: 'stars',
+                  label: 'Bonus',
+                  value: `₹${currentMonthEarnings.bonus}`,
+                  color: '#FF9800',
+                },
+                {
+                  icon: 'trending-up',
+                  label: 'Net',
+                  value: `₹${currentMonthEarnings.netEarnings}`,
+                  color: '#9C27B0',
+                },
+              ].map(({ icon, label, value, color }) => (
+                <View style={styles.earningsItem} key={label}>
+                  <Icon name={icon} size={24} color={color} />
+                  <Text style={styles.earningsLabel}>{label}</Text>
+                  <Text style={styles.earningsValue}>{value}</Text>
+                </View>
+              ))}
             </View>
           </Card.Content>
         </Card>
@@ -161,28 +194,38 @@ const EarningsScreen: React.FC = () => {
           {earnings.map((earning) => (
             <View key={earning.id} style={styles.earningRow}>
               <View style={styles.earningHeader}>
-                <Text style={styles.earningMonth}>{earning.month} {earning.year}</Text>
-                <View style={[
-                  styles.paymentStatus,
-                  { backgroundColor: earning.paid ? '#E8F5E8' : '#FFF3E0' }
-                ]}>
-                  <Text style={[
-                    styles.paymentStatusText,
-                    { color: earning.paid ? '#4CAF50' : '#FF9800' }
-                  ]}>
+                <Text style={styles.earningMonth}>
+                  {earning.month} {earning.year}
+                </Text>
+                <View
+                  style={[
+                    styles.paymentStatus,
+                    { backgroundColor: earning.paid ? '#E8F5E8' : '#FFF3E0' },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.paymentStatusText,
+                      { color: earning.paid ? '#4CAF50' : '#FF9800' },
+                    ]}
+                  >
                     {earning.paid ? 'Paid' : 'Pending'}
                   </Text>
                 </View>
               </View>
-              
+
               <View style={styles.earningDetails}>
                 <View style={styles.earningDetail}>
                   <Text style={styles.earningDetailLabel}>Orders Delivered:</Text>
-                  <Text style={styles.earningDetailValue}>{earning.totalOrders}</Text>
+                  <Text style={styles.earningDetailValue}>
+                    {earning.totalOrders}
+                  </Text>
                 </View>
                 <View style={styles.earningDetail}>
                   <Text style={styles.earningDetailLabel}>Base Earnings:</Text>
-                  <Text style={styles.earningDetailValue}>₹{earning.totalEarnings}</Text>
+                  <Text style={styles.earningDetailValue}>
+                    ₹{earning.totalEarnings}
+                  </Text>
                 </View>
                 <View style={styles.earningDetail}>
                   <Text style={styles.earningDetailLabel}>Bonus:</Text>
@@ -199,7 +242,7 @@ const EarningsScreen: React.FC = () => {
                   </Text>
                 </View>
               </View>
-              
+
               {earning.paid && earning.paidAt && (
                 <Text style={styles.paidDate}>
                   Paid on {new Date(earning.paidAt).toLocaleDateString()}
@@ -367,4 +410,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EarningsScreen; 
+export default EarningsScreen;

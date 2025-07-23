@@ -87,20 +87,28 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   ];
 
+  // Example in your OrderContext.js / OrderContext.ts
+
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      // In a real app, this would be an API call
-      // For now, we'll use mock data
-      setTimeout(() => {
-        setOrders(mockOrders);
-        setLoading(false);
-      }, 1000);
+      const response = await fetch('http://192.168.1.19:1338/api/delivery-partner/open-orders', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer`, // include auth token if required
+          'Content-Type': 'application/json',
+        },
+      });
+      const json = await response.json();
+      console.log(json);
+      setOrders(json.data);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('Error fetching open orders:', error);
+    } finally {
       setLoading(false);
     }
   };
+
 
   const acceptOrder = async (orderId: string) => {
     try {
