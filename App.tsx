@@ -48,37 +48,35 @@ const theme = {
 
 function TabNavigator() {
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          tabBarIcon: ({ focused, color, size }) => {
-            let iconName: string;
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: string;
 
-            if (route.name === 'Orders') {
-              iconName = 'local-shipping';
-            } else if (route.name === 'Map') {
-              iconName = 'map';
-            } else if (route.name === 'Earnings') {
-              iconName = 'account-balance-wallet';
-            } else if (route.name === 'Profile') {
-              iconName = 'person';
-            } else {
-              iconName = 'help';
-            }
+          if (route.name === 'Orders') {
+            iconName = 'moped';
+          } else if (route.name === 'Map') {
+            iconName = 'map';
+          } else if (route.name === 'Earnings') {
+            iconName = 'account-balance-wallet';
+          } else if (route.name === 'Profile') {
+            iconName = 'person';
+          } else {
+            iconName = 'help';
+          }
 
-            return <Icon name={iconName} size={size} color={color} />;
-          },
-          tabBarActiveTintColor: '#2196F3',
-          tabBarInactiveTintColor: 'gray',
-          headerShown: false,
-        })}
-      >
-        <Tab.Screen name="Orders" component={OrdersScreen} />
-        <Tab.Screen name="Map" component={MapScreen} />
-        <Tab.Screen name="Earnings" component={EarningsScreen} />
-        <Tab.Screen name="Profile" component={ProfileScreen} />
-      </Tab.Navigator>
-    </SafeAreaView>
+          return <Icon name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: '#2196F3',
+        tabBarInactiveTintColor: 'gray',
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen name="Orders" component={OrdersScreen} />
+      <Tab.Screen name="Map" component={MapScreen} />
+      <Tab.Screen name="Earnings" component={EarningsScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
+    </Tab.Navigator>
   );
 }
 

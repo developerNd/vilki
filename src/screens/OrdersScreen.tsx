@@ -9,16 +9,14 @@ import {
 import {
   Card,
   Title,
-  Paragraph,
+  Text,
   Button,
   Chip,
-  Text,
   useTheme,
   ActivityIndicator,
 } from 'react-native-paper';
 import { useOrders } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
-import { Order, OrderStatus } from '../types';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '../types/navigation';
@@ -40,10 +38,10 @@ const OrdersScreen: React.FC = () => {
     setRefreshing(false);
   };
 
-  const handleAcceptOrder = (order: Order) => {
+  const handleAcceptOrder = (order: any) => {
     Alert.alert(
       'Accept Order',
-      `Do you want to accept order ${order.orderNumber}?`,
+      `Do you want to accept order ${order.slug}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -57,49 +55,53 @@ const OrdersScreen: React.FC = () => {
     );
   };
 
-  const handleViewOrder = (order: Order) => {
+  const handleViewOrder = (order: any) => {
     navigation.navigate('OrderDetails', { order });
   };
 
-  const getStatusColor = (status: OrderStatus) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case OrderStatus.ACCEPTED:
+      case 'ACCEPTED':
         return '#2196F3';
-      case OrderStatus.ASSIGNED:
+      case 'ASSIGNED':
         return '#FF9800';
-      case OrderStatus.PICKED_UP:
+      case 'PICKED_UP':
         return '#9C27B0';
-      case OrderStatus.IN_TRANSIT:
+      case 'IN_TRANSIT':
         return '#FF5722';
-      case OrderStatus.DELIVERED:
+      case 'DELIVERED':
         return '#4CAF50';
+      case 'DECLINED':
+        return '#F44336';
       default:
         return '#757575';
     }
   };
 
-  const getStatusText = (status: OrderStatus) => {
+  const getStatusText = (status: string) => {
     switch (status) {
-      case OrderStatus.ACCEPTED:
-        return 'Available';
-      case OrderStatus.ASSIGNED:
+      case 'ACCEPTED':
+        return 'Accepted';
+      case 'ASSIGNED':
         return 'Assigned';
-      case OrderStatus.PICKED_UP:
+      case 'PICKED_UP':
         return 'Picked Up';
-      case OrderStatus.IN_TRANSIT:
+      case 'IN_TRANSIT':
         return 'In Transit';
-      case OrderStatus.DELIVERED:
+      case 'DELIVERED':
         return 'Delivered';
+      case 'DECLINED':
+        return 'Declined';
       default:
         return status;
     }
   };
 
-  const renderOrderItem = ({ item }: { item: Order }) => (
+  const renderOrderItem = ({ item }: { item: any }) => (
     <Card style={styles.orderCard} mode="outlined">
       <Card.Content>
         <View style={styles.orderHeader}>
-          <Title style={styles.orderNumber}>{item.orderNumber}</Title>
+          <Title style={styles.orderNumber}>{item.slug}</Title>
           <Chip
             mode="outlined"
             textStyle={{ color: getStatusColor(item.status) }}
@@ -111,22 +113,15 @@ const OrdersScreen: React.FC = () => {
 
         <View style={styles.customerInfo}>
           <Icon name="person" size={16} color="#666" />
-          <Text style={styles.customerText}>{item.customerName}</Text>
+          <Text style={styles.customerText}>{item.consumerName}</Text>
         </View>
 
         <View style={styles.addressContainer}>
           <View style={styles.addressRow}>
             <Icon name="location-on" size={16} color="#FF5722" />
-            <Text style={styles.addressLabel}>Pickup:</Text>
+            <Text style={styles.addressLabel}>Address:</Text>
             <Text style={styles.addressText} numberOfLines={2}>
-              {item.pickupAddress?.address ?? 'N/A'}
-            </Text>
-          </View>
-          <View style={styles.addressRow}>
-            <Icon name="location-on" size={16} color="#4CAF50" />
-            <Text style={styles.addressLabel}>Delivery:</Text>
-            <Text style={styles.addressText} numberOfLines={2}>
-              {item.deliveryAddress?.address ?? 'N/A'}
+              {item.address?.addressLine1 ?? 'N/A'}
             </Text>
           </View>
         </View>
@@ -135,36 +130,28 @@ const OrdersScreen: React.FC = () => {
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Items:</Text>
             <Text style={styles.detailValue}>
-              {(item.items?.length ?? 0)} items
+              {(item.order_products?.length ?? 0)} items
             </Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Amount:</Text>
-            <Text style={styles.detailValue}>₹{item.totalAmount}</Text>
+            <Text style={styles.detailValue}>₹{item.total_amount}</Text>
           </View>
-          {item.distance && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Distance:</Text>
-              <Text style={styles.detailValue}>{item.distance} km</Text>
-            </View>
-          )}
-          {item.estimatedTime && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>ETA:</Text>
-              <Text style={styles.detailValue}>{item.estimatedTime} min</Text>
-            </View>
-          )}
         </View>
 
         <View style={styles.actionButtons}>
           <Button
             mode="outlined"
-            onPress={() => handleViewOrder(item)}
+            onPress={() => {
+              console.log('View Details pressed for order:', item.slug);
+              handleViewOrder(item);
+            }}
             style={styles.viewButton}
           >
             View Details
           </Button>
-          {item.status === OrderStatus.ACCEPTED && (
+          {/* Show Accept button only if order is not accepted or declined */}
+          {(item.status !== 'ACCEPTED' && item.status !== 'DECLINED') && (
             <Button
               mode="contained"
               onPress={() => handleAcceptOrder(item)}
@@ -199,7 +186,7 @@ const OrdersScreen: React.FC = () => {
       <FlatList
         data={orders}
         renderItem={renderOrderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />

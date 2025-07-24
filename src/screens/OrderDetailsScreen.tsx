@@ -9,22 +9,19 @@ import {
 import {
   Card,
   Title,
-  Paragraph,
-  Button,
-  Chip,
   Text,
+  Chip,
   Divider,
-  List,
+  Button,
   useTheme,
 } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useOrders } from '../context/OrderContext';
-import { Order, OrderStatus } from '../types';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { NavigationProp } from '../types/navigation';
 
 interface RouteParams {
-  order: Order;
+  order: any;
 }
 
 const OrderDetailsScreen: React.FC = () => {
@@ -36,14 +33,18 @@ const OrderDetailsScreen: React.FC = () => {
   const [updating, setUpdating] = useState(false);
 
   const handleCallCustomer = () => {
-    Linking.openURL(`tel:${order.customerPhone}`);
+    if (order.consumerPhone) {
+      Linking.openURL(`tel:${order.consumerPhone}`);
+    } else {
+      Alert.alert('Phone number not available');
+    }
   };
 
-  const handleUpdateStatus = async (newStatus: OrderStatus) => {
+  const handleUpdateStatus = async (newStatus: string) => {
     setUpdating(true);
     try {
       await updateOrderStatus(order.id, newStatus);
-      Alert.alert('Success', `Order status updated to ${getStatusText(newStatus)}`);
+      Alert.alert('Success', `Order status updated to ${newStatus}`);
     } catch (error) {
       Alert.alert('Error', 'Failed to update order status');
     } finally {
@@ -51,76 +52,61 @@ const OrderDetailsScreen: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: OrderStatus) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case OrderStatus.ACCEPTED:
+      case 'ACCEPTED':
         return '#2196F3';
-      case OrderStatus.ASSIGNED:
+      case 'ASSIGNED':
         return '#FF9800';
-      case OrderStatus.PICKED_UP:
+      case 'PICKED_UP':
         return '#9C27B0';
-      case OrderStatus.IN_TRANSIT:
+      case 'IN_TRANSIT':
         return '#FF5722';
-      case OrderStatus.DELIVERED:
+      case 'DELIVERED':
         return '#4CAF50';
+      case 'DECLINED':
+        return '#F44336';
       default:
         return '#757575';
     }
   };
 
-  const getStatusText = (status: OrderStatus) => {
+  const getStatusText = (status: string) => {
     switch (status) {
-      case OrderStatus.ACCEPTED:
-        return 'Available';
-      case OrderStatus.ASSIGNED:
+      case 'ACCEPTED':
+        return 'Accepted';
+      case 'ASSIGNED':
         return 'Assigned';
-      case OrderStatus.PICKED_UP:
+      case 'PICKED_UP':
         return 'Picked Up';
-      case OrderStatus.IN_TRANSIT:
+      case 'IN_TRANSIT':
         return 'In Transit';
-      case OrderStatus.DELIVERED:
+      case 'DELIVERED':
         return 'Delivered';
+      case 'DECLINED':
+        return 'Declined';
       default:
         return status;
     }
   };
 
-  const canUpdateStatus = (currentStatus: OrderStatus, targetStatus: OrderStatus) => {
-    const statusFlow = [
-      OrderStatus.ACCEPTED,
-      OrderStatus.ASSIGNED,
-      OrderStatus.PICKED_UP,
-      OrderStatus.IN_TRANSIT,
-      OrderStatus.DELIVERED,
-    ];
-    
-    const currentIndex = statusFlow.indexOf(currentStatus);
-    const targetIndex = statusFlow.indexOf(targetStatus);
-    
-    return targetIndex === currentIndex + 1;
+  const nextStatusMap: Record<string, string | null> = {
+    ACCEPTED: 'ASSIGNED',
+    ASSIGNED: 'PICKED_UP',
+    PICKED_UP: 'IN_TRANSIT',
+    IN_TRANSIT: 'DELIVERED',
+    DELIVERED: null,
+    DECLINED: null,
   };
 
-  const getNextStatus = (currentStatus: OrderStatus): OrderStatus | null => {
-    switch (currentStatus) {
-      case OrderStatus.ASSIGNED:
-        return OrderStatus.PICKED_UP;
-      case OrderStatus.PICKED_UP:
-        return OrderStatus.IN_TRANSIT;
-      case OrderStatus.IN_TRANSIT:
-        return OrderStatus.DELIVERED;
-      default:
-        return null;
-    }
-  };
-
-  const nextStatus = getNextStatus(order.status);
+  const nextStatus = nextStatusMap[order.status] ?? null;
 
   return (
     <ScrollView style={styles.container}>
       <Card style={styles.card} mode="outlined">
         <Card.Content>
           <View style={styles.header}>
-            <Title style={styles.orderNumber}>{order.orderNumber}</Title>
+            <Title style={styles.orderNumber}>{order.slug}</Title>
             <Chip
               mode="outlined"
               textStyle={{ color: getStatusColor(order.status) }}
@@ -137,11 +123,11 @@ const OrderDetailsScreen: React.FC = () => {
             <View style={styles.customerInfo}>
               <View style={styles.infoRow}>
                 <Icon name="person" size={20} color="#666" />
-                <Text style={styles.infoText}>{order.customerName}</Text>
+                <Text style={styles.infoText}>{order.consumerName}</Text>
               </View>
               <View style={styles.infoRow}>
                 <Icon name="phone" size={20} color="#666" />
-                <Text style={styles.infoText}>{order.customerPhone}</Text>
+                <Text style={styles.infoText}>{order.consumerPhone}</Text>
                 <Button
                   mode="text"
                   compact
@@ -151,39 +137,31 @@ const OrderDetailsScreen: React.FC = () => {
                   Call
                 </Button>
               </View>
+              {order.consumerEmail && (
+                <View style={styles.infoRow}>
+                  <Icon name="email" size={20} color="#666" />
+                  <Text style={styles.infoText}>{order.consumerEmail}</Text>
+                </View>
+              )}
             </View>
           </View>
 
           <Divider style={styles.divider} />
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Pickup Location</Text>
+            <Text style={styles.sectionTitle}>Address</Text>
             <View style={styles.addressCard}>
               <Icon name="location-on" size={20} color="#FF5722" />
               <View style={styles.addressContent}>
-                <Text style={styles.addressText}>{order.pickupAddress.address}</Text>
-                {order.pickupAddress.instructions && (
+                <Text style={styles.addressText}>{order.address?.addressLine1 ?? 'N/A'}</Text>
+                <Text style={styles.addressText}>
+                  {order.address?.city}, {order.address?.state}, {order.address?.pincode}
+                </Text>
+                {order.address?.addressLine2 ? (
                   <Text style={styles.instructions}>
-                    Instructions: {order.pickupAddress.instructions}
+                    {order.address.addressLine2}
                   </Text>
-                )}
-              </View>
-            </View>
-          </View>
-
-          <Divider style={styles.divider} />
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Delivery Location</Text>
-            <View style={styles.addressCard}>
-              <Icon name="location-on" size={20} color="#4CAF50" />
-              <View style={styles.addressContent}>
-                <Text style={styles.addressText}>{order.deliveryAddress.address}</Text>
-                {order.deliveryAddress.instructions && (
-                  <Text style={styles.instructions}>
-                    Instructions: {order.deliveryAddress.instructions}
-                  </Text>
-                )}
+                ) : null}
               </View>
             </View>
           </View>
@@ -192,11 +170,11 @@ const OrderDetailsScreen: React.FC = () => {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Order Items</Text>
-            {order.items.map((item, index) => (
+            {order.order_products?.map((item: any) => (
               <View key={item.id} style={styles.itemRow}>
                 <View style={styles.itemInfo}>
                   <Text style={styles.itemName}>{item.name}</Text>
-                  <Text style={styles.itemCategory}>{item.category}</Text>
+                  {/* If you have category or type, you can show here */}
                 </View>
                 <View style={styles.itemDetails}>
                   <Text style={styles.itemQuantity}>Qty: {item.quantity}</Text>
@@ -207,7 +185,7 @@ const OrderDetailsScreen: React.FC = () => {
             <Divider style={styles.itemDivider} />
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Total Amount:</Text>
-              <Text style={styles.totalAmount}>₹{order.totalAmount}</Text>
+              <Text style={styles.totalAmount}>₹{order.total_amount}</Text>
             </View>
           </View>
 
@@ -295,39 +273,41 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
   },
   infoText: {
-    marginLeft: 12,
     fontSize: 14,
-    color: '#333',
-    flex: 1,
+    color: '#444',
   },
   callButton: {
-    marginLeft: 8,
+    marginLeft: 16,
   },
   addressCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 8,
+    elevation: 1,
   },
   addressContent: {
+    marginLeft: 8,
     flex: 1,
-    marginLeft: 12,
   },
   addressText: {
     fontSize: 14,
     color: '#333',
-    lineHeight: 20,
   },
   instructions: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
     fontStyle: 'italic',
+    fontSize: 12,
+    marginTop: 4,
+    color: '#666',
   },
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     paddingVertical: 8,
   },
   itemInfo: {
@@ -338,23 +318,18 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#333',
   },
-  itemCategory: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
   itemDetails: {
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
   },
   itemQuantity: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#666',
   },
   itemPrice: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    marginTop: 2,
+    fontWeight: '600',
   },
   itemDivider: {
     marginVertical: 8,
@@ -362,16 +337,16 @@ const styles = StyleSheet.create({
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
   },
   totalLabel: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
   },
   totalAmount: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#2196F3',
   },
@@ -386,13 +361,15 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontSize: 14,
+    fontWeight: '600',
     color: '#333',
-    fontWeight: '500',
   },
   actionSection: {
-    marginTop: 16,
+    marginTop: 24,
+    alignItems: 'center',
   },
   updateButton: {
+    width: '100%',
     borderRadius: 8,
   },
   updateButtonContent: {
@@ -400,4 +377,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default OrderDetailsScreen; 
+export default OrderDetailsScreen;

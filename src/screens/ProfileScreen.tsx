@@ -39,7 +39,7 @@ const ProfileScreen: React.FC = () => {
     );
   };
 
-  if (!deliveryPartner) {
+  if (!deliveryPartner || !deliveryPartner.name) {
     return (
       <View style={styles.container}>
         <Text>Loading profile...</Text>
@@ -47,12 +47,13 @@ const ProfileScreen: React.FC = () => {
     );
   }
 
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Avatar.Text
           size={80}
-          label={deliveryPartner.name.split(' ').map(n => n[0]).join('')}
+          label={deliveryPartner?.name ? deliveryPartner.name.split(' ').map(n => n[0]).join('') : 'DP'}
           style={styles.avatar}
         />
         <Title style={styles.name}>{deliveryPartner.name}</Title>
@@ -63,21 +64,21 @@ const ProfileScreen: React.FC = () => {
       <Card style={styles.card} mode="outlined">
         <Card.Content>
           <Title style={styles.sectionTitle}>Personal Information</Title>
-          
+
           <List.Item
             title="Name"
             description={deliveryPartner.name}
             left={(props) => <List.Icon {...props} icon="account" />}
             style={styles.listItem}
           />
-          
+
           <List.Item
             title="Email"
             description={deliveryPartner.email}
             left={(props) => <List.Icon {...props} icon="email" />}
             style={styles.listItem}
           />
-          
+
           <List.Item
             title="Phone"
             description={deliveryPartner.phone}
@@ -90,14 +91,14 @@ const ProfileScreen: React.FC = () => {
       <Card style={styles.card} mode="outlined">
         <Card.Content>
           <Title style={styles.sectionTitle}>Vehicle Information</Title>
-          
+
           <List.Item
             title="Vehicle Type"
             description={deliveryPartner.vehicleType}
             left={(props) => <List.Icon {...props} icon="motorcycle" />}
             style={styles.listItem}
           />
-          
+
           <List.Item
             title="Vehicle Number"
             description={deliveryPartner.vehicleNumber}
@@ -110,7 +111,7 @@ const ProfileScreen: React.FC = () => {
       <Card style={styles.card} mode="outlined">
         <Card.Content>
           <Title style={styles.sectionTitle}>Account Status</Title>
-          
+
           <View style={styles.statusContainer}>
             <View style={styles.statusRow}>
               <Icon
@@ -129,14 +130,14 @@ const ProfileScreen: React.FC = () => {
       <Card style={styles.card} mode="outlined">
         <Card.Content>
           <Title style={styles.sectionTitle}>App Information</Title>
-          
+
           <List.Item
             title="App Version"
             description="1.0.0"
             left={(props) => <List.Icon {...props} icon="information" />}
             style={styles.listItem}
           />
-          
+
           <List.Item
             title="Last Updated"
             description={new Date().toLocaleDateString()}

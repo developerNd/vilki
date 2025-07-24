@@ -18,7 +18,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE_URL = 'http://192.168.1.19:1338'; // Replace with your backend IP
+const API_BASE_URL = 'http://localhost:1338'; // Replace with your backend IP
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (partnerId: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/delivery-partner/login`, {
+      const response = await fetch(`localhost:1338/api/delivery-partner/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: partnerId, password }),
@@ -102,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setDeliveryPartner(updatedPartner);
       await AsyncStorage.setItem('deliveryPartner', JSON.stringify(updatedPartner));
 
-      await fetch(`${API_BASE_URL}/api/delivery-partners/${deliveryPartner.id}`, {
+      await fetch(`localhost:1338/api/delivery-partners/${deliveryPartner.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentLocation: updatedPartner.currentLocation }),
