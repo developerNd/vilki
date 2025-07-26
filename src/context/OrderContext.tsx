@@ -92,7 +92,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://192.168.23.140:1338/api/delivery-partner/open-orders', {
+      const response = await fetch('http://192.168.74.101:1338/api/delivery-partner/open-orders', {
         method: 'GET',
         headers: {
           Authorization: `Bearer`, // include auth token if required

@@ -1,11 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  deliveryLogin,
+  deliveryLogout,
+  updatePartnerLocation,
+  getStoredPartner,
+} from '../utils/deliveryapi';
 
 export interface DeliveryPartner {
   id: string;
   name: string;
   currentLocation?: { latitude: number; longitude: number };
-  // Add other fields if needed
 }
 
 interface AuthContextType {
@@ -17,8 +21,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const API_BASE_URL = 'http://localhost:1338'; // Replace with your backend IP
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
@@ -32,83 +34,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     (async () => {
-      try {
-        const storedUser = await AsyncStorage.getItem('deliveryPartner');
-        if (storedUser) {
-          setDeliveryPartner(JSON.parse(storedUser));
-          setIsAuthenticated(true);
-        }
-      } catch (e) {
-        console.error('Error loading auth state', e);
+      const user = await getStoredPartner();
+      if (user) {
+        setDeliveryPartner(user);
+        setIsAuthenticated(true);
       }
     })();
   }, []);
 
   const login = async (partnerId: string, password: string): Promise<boolean> => {
-    try {
-      const response = await fetch(`localhost:1338/api/delivery-partner/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: partnerId, password }),
-      });
-
-      if (!response.ok) {
-        console.log('Login failed status:', response.status);
-        return false;
-      }
-
-      const data = await response.json();
-
-      if (data.error) {
-        console.log('Login error:', data.error.message);
-        return false;
-      }
-
-      const { jwt, user } = data;
-
-      await AsyncStorage.setItem('deliveryPartner', JSON.stringify(user));
-      await AsyncStorage.setItem('token', jwt);
-
-      setDeliveryPartner(user);
+    const result = await deliveryLogin(partnerId, password);
+    if (result.success) {
+      setDeliveryPartner(result.user);
       setIsAuthenticated(true);
-      console.log('Login successful for:', user.name);
-
-      return true;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
     }
+    return result.success;
   };
 
   const logout = async (): Promise<void> => {
-    try {
-      await AsyncStorage.removeItem('deliveryPartner');
-      await AsyncStorage.removeItem('token');
-      setDeliveryPartner(null);
-      setIsAuthenticated(false);
-      console.log('Logout successful');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    await deliveryLogout();
+    setDeliveryPartner(null);
+    setIsAuthenticated(false);
   };
 
   const updateLocation = async (latitude: number, longitude: number): Promise<void> => {
     if (!deliveryPartner) return;
-    try {
-      const updatedPartner = {
-        ...deliveryPartner,
-        currentLocation: { latitude, longitude },
-      };
+    const updatedPartner = {
+      ...deliveryPartner,
+      currentLocation: { latitude, longitude },
+    };
+    const success = await updatePartnerLocation(deliveryPartner.id, latitude, longitude);
+    if (success) {
       setDeliveryPartner(updatedPartner);
-      await AsyncStorage.setItem('deliveryPartner', JSON.stringify(updatedPartner));
-
-      await fetch(`localhost:1338/api/delivery-partners/${deliveryPartner.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentLocation: updatedPartner.currentLocation }),
-      });
-    } catch (error) {
-      console.error('Error updating location:', error);
     }
   };
 

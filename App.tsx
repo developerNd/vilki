@@ -51,10 +51,10 @@ function TabNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName: string;
+          let iconName= '';
 
           if (route.name === 'Orders') {
-            iconName = 'moped';
+            iconName = 'delivery';
           } else if (route.name === 'Map') {
             iconName = 'map';
           } else if (route.name === 'Earnings') {
