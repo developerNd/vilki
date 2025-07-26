@@ -19,6 +19,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { useOrders } from '../context/OrderContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { NavigationProp } from '../types/navigation';
+import { OrderStatus } from '../types';
 
 interface RouteParams {
   order: any;
@@ -43,7 +44,7 @@ const OrderDetailsScreen: React.FC = () => {
   const handleUpdateStatus = async (newStatus: string) => {
     setUpdating(true);
     try {
-      await updateOrderStatus(order.id, newStatus);
+      await updateOrderStatus(order.id, newStatus as OrderStatus);
       Alert.alert('Success', `Order status updated to ${newStatus}`);
     } catch (error) {
       Alert.alert('Error', 'Failed to update order status');

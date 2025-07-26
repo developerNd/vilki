@@ -15,19 +15,8 @@ import {
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-
-interface Earnings {
-  id: string;
-  month: string;
-  year: number;
-  totalOrders: number;
-  totalEarnings: number;
-  bonus: number;
-  deductions: number;
-  netEarnings: number;
-  paid: boolean;
-  paidAt?: string;
-}
+import { earningsAPI } from '../services/api';
+import { Earnings } from '../types';
 
 const EarningsScreen: React.FC = () => {
   const { deliveryPartner } = useAuth();
@@ -83,24 +72,25 @@ const EarningsScreen: React.FC = () => {
     },
   ];
 
-  // Fetch earnings (simulate API call)
+  // Fetch earnings from API
   const fetchEarnings = useCallback(async () => {
     setLoading(true);
     try {
-      // TODO: Replace this with real API fetch call for deliveryPartner.id
-      // e.g., const response = await fetch(`${API_BASE_URL}/earnings/${deliveryPartner?.id}`);
-      // const data = await response.json();
-      // setEarnings(data);
-
-      setTimeout(() => {
+      const response = await earningsAPI.getEarnings();
+      if (response && response.data) {
+        setEarnings(response.data);
+      } else {
+        // Fallback to mock data if API fails
         setEarnings(mockEarnings);
-        setLoading(false);
-      }, 1000);
+      }
     } catch (error) {
       console.error('Error fetching earnings:', error);
+      // Fallback to mock data for development
+      setEarnings(mockEarnings);
+    } finally {
       setLoading(false);
     }
-  }, [mockEarnings]);
+  }, []);
 
   useEffect(() => {
     fetchEarnings();

@@ -1,11 +1,14 @@
 export interface DeliveryPartner {
-  id: string;
+  id: number;
+  partnerid: string;
   name: string;
-  email: string;
+  mail: string;
   phone: string;
   vehicleNumber: string;
   vehicleType: string;
   isActive: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
   currentLocation?: {
     latitude: number;
     longitude: number;

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Order, OrderStatus } from '../types';
+import { ordersAPI } from '../services/api';
 
 interface OrderContextType {
   orders: Order[];
@@ -92,18 +93,17 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://192.168.74.101:1338/api/delivery-partner/open-orders', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer`, // include auth token if required
-          'Content-Type': 'application/json',
-        },
-      });
-      const json = await response.json();
-      console.log(json);
-      setOrders(json.data);
+      const response = await ordersAPI.getOrders();
+      if (response && response.data) {
+        setOrders(response.data);
+      } else {
+        // Fallback to mock data if API fails
+        setOrders(mockOrders);
+      }
     } catch (error) {
       console.error('Error fetching open orders:', error);
+      // Fallback to mock data for development
+      setOrders(mockOrders);
     } finally {
       setLoading(false);
     }
@@ -112,13 +112,16 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const acceptOrder = async (orderId: string) => {
     try {
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.id === orderId
-            ? { ...order, status: OrderStatus.ASSIGNED, assignedTo: 'current-partner-id' }
-            : order
-        )
-      );
+      const response = await ordersAPI.acceptOrder(orderId);
+      if (response) {
+        setOrders(prevOrders =>
+          prevOrders.map(order =>
+            order.id === orderId
+              ? { ...order, status: OrderStatus.ASSIGNED, assignedTo: 'current-partner-id' }
+              : order
+          )
+        );
+      }
     } catch (error) {
       console.error('Error accepting order:', error);
     }
@@ -126,25 +129,28 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
     try {
-      setOrders(prevOrders =>
-        prevOrders.map(order => {
-          if (order.id === orderId) {
-            const updatedOrder = { ...order, status };
-            if (status === OrderStatus.PICKED_UP) {
-              updatedOrder.pickedUpAt = new Date().toISOString();
-            } else if (status === OrderStatus.DELIVERED) {
-              updatedOrder.deliveredAt = new Date().toISOString();
+      const response = await ordersAPI.updateOrderStatus(orderId, status);
+      if (response) {
+        setOrders(prevOrders =>
+          prevOrders.map(order => {
+            if (order.id === orderId) {
+              const updatedOrder = { ...order, status };
+              if (status === OrderStatus.PICKED_UP) {
+                updatedOrder.pickedUpAt = new Date().toISOString();
+              } else if (status === OrderStatus.DELIVERED) {
+                updatedOrder.deliveredAt = new Date().toISOString();
+              }
+              return updatedOrder;
             }
-            return updatedOrder;
-          }
-          return order;
-        })
-      );
+            return order;
+          })
+        );
 
-      if (currentOrder?.id === orderId) {
-        const updatedCurrentOrder = orders.find(order => order.id === orderId);
-        if (updatedCurrentOrder) {
-          setCurrentOrder(updatedCurrentOrder);
+        if (currentOrder?.id === orderId) {
+          const updatedCurrentOrder = orders.find(order => order.id === orderId);
+          if (updatedCurrentOrder) {
+            setCurrentOrder(updatedCurrentOrder);
+          }
         }
       }
     } catch (error) {

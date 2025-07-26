@@ -1,5 +1,5 @@
 // screens/LoginScreen.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -30,6 +30,9 @@ const LoginScreen: React.FC = () => {
   const { login, isAuthenticated } = useAuth();
   const navigation = useNavigation();
   const theme = useTheme();
+  
+  // Create a ref for password input to enable focusing programmatically
+  const passwordInputRef = useRef<any>(null);
 
   const testUsers = [
     { id: 'DP001', name: 'Rahul Kumar', location: 'Connaught Place' },
@@ -40,7 +43,9 @@ const LoginScreen: React.FC = () => {
   ];
 
   useEffect(() => {
+    console.log('LoginScreen: isAuthenticated changed to:', isAuthenticated);
     if (isAuthenticated) {
+      console.log('LoginScreen: Navigating to Main screen');
       // Reset navigation stack and navigate to Dashboard (Main Tab)
       navigation.dispatch(
         CommonActions.reset({
@@ -63,7 +68,9 @@ const LoginScreen: React.FC = () => {
 
     setLoading(true);
     try {
+      console.log('LoginScreen: Attempting login with:', partnerId.trim());
       const success = await login(partnerId.trim(), password.trim());
+      console.log('LoginScreen: Login result:', success);
       if (!success) {
         Alert.alert(
           'Invalid Credentials',
@@ -72,6 +79,7 @@ const LoginScreen: React.FC = () => {
         );
       }
     } catch (error) {
+      console.log('LoginScreen: Login error:', error);
       Alert.alert('Error', 'Login failed. Please try again.');
     } finally {
       setLoading(false);
@@ -200,10 +208,6 @@ const LoginScreen: React.FC = () => {
     </KeyboardAvoidingView>
   );
 };
-
-// Create a ref for password input to enable focusing programmatically
-import { useRef } from 'react';
-const passwordInputRef = React.createRef<any>();
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#E3F2FD' },

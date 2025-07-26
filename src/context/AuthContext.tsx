@@ -1,16 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-  deliveryLogin,
-  deliveryLogout,
-  updatePartnerLocation,
-  getStoredPartner,
-} from '../utils/deliveryapi';
-
-export interface DeliveryPartner {
-  id: string;
-  name: string;
-  currentLocation?: { latitude: number; longitude: number };
-}
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authAPI } from '../services/api';
+import { DeliveryPartner } from '../types';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -34,38 +25,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     (async () => {
-      const user = await getStoredPartner();
-      if (user) {
-        setDeliveryPartner(user);
+      const token = await AsyncStorage.getItem('token');
+      const user = await AsyncStorage.getItem('deliveryPartner');
+      if (token && user) {
+        setDeliveryPartner(JSON.parse(user));
         setIsAuthenticated(true);
       }
     })();
   }, []);
 
   const login = async (partnerId: string, password: string): Promise<boolean> => {
-    const result = await deliveryLogin(partnerId, password);
-    if (result.success) {
-      setDeliveryPartner(result.user);
-      setIsAuthenticated(true);
+    try {
+      const response = await authAPI.login(partnerId, password);
+      console.log('AuthContext login response:', response);
+      
+      if (response && response.success && response.user) {
+        console.log('Setting delivery partner:', response.user);
+        setDeliveryPartner(response.user);
+        setIsAuthenticated(true);
+        console.log('Login successful, user authenticated, isAuthenticated set to true');
+        return true;
+      }
+      console.log('Login failed:', response?.error || 'Unknown error');
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
-    return result.success;
   };
 
   const logout = async (): Promise<void> => {
-    await deliveryLogout();
+    await authAPI.logout();
     setDeliveryPartner(null);
     setIsAuthenticated(false);
   };
 
   const updateLocation = async (latitude: number, longitude: number): Promise<void> => {
     if (!deliveryPartner) return;
-    const updatedPartner = {
-      ...deliveryPartner,
-      currentLocation: { latitude, longitude },
-    };
-    const success = await updatePartnerLocation(deliveryPartner.id, latitude, longitude);
-    if (success) {
-      setDeliveryPartner(updatedPartner);
+    try {
+      const success = await authAPI.updateLocation(deliveryPartner.id.toString(), latitude, longitude);
+      if (success) {
+        const updatedPartner = {
+          ...deliveryPartner,
+          currentLocation: { latitude, longitude },
+        };
+        setDeliveryPartner(updatedPartner);
+        await AsyncStorage.setItem('deliveryPartner', JSON.stringify(updatedPartner));
+      }
+    } catch (error) {
+      console.error('Location update error:', error);
     }
   };
 
