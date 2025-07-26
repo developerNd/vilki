@@ -1,6 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import {View,StyleSheet,FlatList,RefreshControl,Alert,} from 'react-native';
-import {Card,Title,Text,Button,Chip,useTheme,ActivityIndicator,} from 'react-native-paper';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  RefreshControl,
+  Alert,
+} from 'react-native';
+import {
+  Card,
+  Title,
+  Text,
+  Button,
+  Chip,
+  useTheme,
+  ActivityIndicator,
+} from 'react-native-paper';
 import { useOrders } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -154,7 +168,6 @@ const OrdersScreen: React.FC = () => {
   );
 
   if (loading && !refreshing) {
-    console.log('Loading orders...');
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
