@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "Vilki-Delivery-Partner-App.app"
-               BlueprintName = "Vilki-Delivery-Partner-App"
-               ReferencedContainer = "container:Vilki-Delivery-Partner-App.xcodeproj">
+               BuildableName = "vilki.app"
+               BlueprintName = "vilki"
+               ReferencedContainer = "container:vilki.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "Vilki-Delivery-Partner-AppTests.xctest"
-               BlueprintName = "Vilki-Delivery-Partner-AppTests"
-               ReferencedContainer = "container:Vilki-Delivery-Partner-App.xcodeproj">
+               BuildableName = "vilkiTests.xctest"
+               BlueprintName = "vilkiTests"
+               ReferencedContainer = "container:vilki.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "Vilki-Delivery-Partner-App.app"
-            BlueprintName = "Vilki-Delivery-Partner-App"
-            ReferencedContainer = "container:Vilki-Delivery-Partner-App.xcodeproj">
+            BuildableName = "vilki.app"
+            BlueprintName = "vilki"
+            ReferencedContainer = "container:vilki.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "Vilki-Delivery-Partner-App.app"
-            BlueprintName = "Vilki-Delivery-Partner-App"
-            ReferencedContainer = "container:Vilki-Delivery-Partner-App.xcodeproj">
+            BuildableName = "vilki.app"
+            BlueprintName = "vilki"
+            ReferencedContainer = "container:vilki.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

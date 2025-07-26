@@ -24,7 +24,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     window = UIWindow(frame: UIScreen.main.bounds)
 
     factory.startReactNative(
-      withModuleName: "Vilki-Delivery-Partner-App",
+      withModuleName: "vilki",
       in: window,
       launchOptions: launchOptions
     )

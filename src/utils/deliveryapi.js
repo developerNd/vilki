@@ -4,8 +4,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const isDev = __DEV__;
-//export const IP = "https://api.vilkimedicart.in";
-export const IP = isDev ? 'http://192.168.74.101:1338' : 'https://api.vilkimedicart.in';
+export const IP = "https://api.vilkimedicart.in";
+//export const IP = isDev ? 'http://192.168.74.101:1338' : 'https://api.vilkimedicart.in';
 export const baseURL = `${IP}/api`;
 
 export const getHeader = async () => {
