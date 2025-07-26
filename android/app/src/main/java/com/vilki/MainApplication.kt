@@ -1,4 +1,4 @@
-package com.vilki
+package com.Vilki-Delivery-Partner-App
 
 import android.app.Application
 import com.facebook.react.PackageList

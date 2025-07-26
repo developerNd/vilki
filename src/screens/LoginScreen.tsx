@@ -95,6 +95,7 @@ const LoginScreen: React.FC = () => {
               source={require('../../assets/transparent_logo.png')}
               style={styles.logo}
             />
+            <Text style={styles.subtitle}>Vilki Delivery</Text>
             <Text style={styles.subtitle}>Partner App</Text>
           </View>
 
@@ -193,7 +194,7 @@ const LoginScreen: React.FC = () => {
           </Surface>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>© 2024 Vilki Delivery. All rights reserved.</Text>
+            <Text style={styles.footerText}>© 2024 Vilki-Delivery-Partner-App. All rights reserved.</Text>
           </View>
         </View>
       </ScrollView>
