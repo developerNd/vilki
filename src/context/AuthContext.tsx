@@ -1,10 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-  deliveryLogin,
-  deliveryLogout,
-  updatePartnerLocation,
-  getStoredPartner,
-} from '../utils/deliveryapi';
+import { authAPI } from '../services/api';
 
 export interface DeliveryPartner {
   id: string;
@@ -32,9 +27,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [deliveryPartner, setDeliveryPartner] = useState<DeliveryPartner | null>(null);
 
+  // Check stored user on mount
   useEffect(() => {
     (async () => {
-      const user = await getStoredPartner();
+      const user = await authAPI.getStoredPartner();
       if (user) {
         setDeliveryPartner(user);
         setIsAuthenticated(true);
@@ -42,8 +38,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     })();
   }, []);
 
+  // Login logic
   const login = async (partnerId: string, password: string): Promise<boolean> => {
-    const result = await deliveryLogin(partnerId, password);
+    const result = await authAPI.login(partnerId, password);
     if (result.success) {
       setDeliveryPartner(result.user);
       setIsAuthenticated(true);
@@ -51,21 +48,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return result.success;
   };
 
+  // Logout logic
   const logout = async (): Promise<void> => {
-    await deliveryLogout();
+    await authAPI.logout();
     setDeliveryPartner(null);
     setIsAuthenticated(false);
   };
 
+  // Update delivery partner location
   const updateLocation = async (latitude: number, longitude: number): Promise<void> => {
     if (!deliveryPartner) return;
-    const updatedPartner = {
-      ...deliveryPartner,
-      currentLocation: { latitude, longitude },
-    };
-    const success = await updatePartnerLocation(deliveryPartner.id, latitude, longitude);
+    const success = await authAPI.updateLocation(deliveryPartner.id, latitude, longitude);
     if (success) {
-      setDeliveryPartner(updatedPartner);
+      setDeliveryPartner((prev) =>
+        prev
+          ? {
+              ...prev,
+              currentLocation: { latitude, longitude },
+            }
+          : null
+      );
     }
   };
 
