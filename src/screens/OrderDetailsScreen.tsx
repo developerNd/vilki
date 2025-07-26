@@ -222,6 +222,7 @@ const OrderDetailsScreen: React.FC = () => {
                 disabled={updating}
                 style={styles.updateButton}
                 contentStyle={styles.updateButtonContent}
+                icon={updating ? undefined : 'check-circle'}
               >
                 Mark as {getStatusText(nextStatus)}
               </Button>

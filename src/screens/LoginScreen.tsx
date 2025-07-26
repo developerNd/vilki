@@ -113,6 +113,7 @@ const LoginScreen: React.FC = () => {
               autoCapitalize="none"
               autoCorrect={false}
               placeholder="Enter your partner ID"
+              left={<TextInput.Icon icon="account" />}
               returnKeyType="next"
               onSubmitEditing={() => {
                 // Focus password input on submit partner ID
@@ -129,9 +130,10 @@ const LoginScreen: React.FC = () => {
               style={styles.input}
               secureTextEntry={!showPassword}
               placeholder="Enter your password"
+              left={<TextInput.Icon icon="lock" />}
               right={
                 <TextInput.Icon
-                  name={showPassword ? 'eye-off' : 'eye'}
+                  icon={showPassword ? 'eye-off' : 'eye'}
                   onPress={() => setShowPassword(!showPassword)}
                 />
               }
@@ -147,6 +149,7 @@ const LoginScreen: React.FC = () => {
               disabled={loading}
               style={styles.loginButton}
               contentStyle={styles.loginButtonContent}
+              icon={loading ? undefined : 'login'}
             >
               {loading ? 'Signing In...' : 'Sign In'}
             </Button>
@@ -155,6 +158,7 @@ const LoginScreen: React.FC = () => {
               mode="text"
               onPress={() => setShowTestUsers(!showTestUsers)}
               style={styles.testUsersButton}
+              icon={showTestUsers ? 'chevron-up' : 'chevron-down'}
             >
               {showTestUsers ? 'Hide Test Users' : 'Show Test Users'}
             </Button>
@@ -170,6 +174,7 @@ const LoginScreen: React.FC = () => {
                       onPress={() => selectTestUser(user.id)}
                       style={styles.testUserButton}
                       contentStyle={styles.testUserButtonContent}
+                      icon="account-circle"
                     >
                       <View style={styles.testUserInfo}>
                         <Text style={[styles.testUserId, { color: theme.colors.primary }]}>

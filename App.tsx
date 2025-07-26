@@ -54,7 +54,7 @@ function TabNavigator() {
           let iconName= '';
 
           if (route.name === 'Orders') {
-            iconName = 'delivery';
+            iconName = 'local-shipping';
           } else if (route.name === 'Map') {
             iconName = 'map';
           } else if (route.name === 'Earnings') {

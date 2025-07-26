@@ -94,6 +94,7 @@ const MapScreen: React.FC = () => {
                     onPress={() => {
                       // Navigate to order details
                     }}
+                    icon="eye"
                   >
                     View
                   </Button>

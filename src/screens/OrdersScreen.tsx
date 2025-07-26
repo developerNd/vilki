@@ -147,6 +147,7 @@ const OrdersScreen: React.FC = () => {
               handleViewOrder(item);
             }}
             style={styles.viewButton}
+            icon="eye"
           >
             View Details
           </Button>
@@ -156,6 +157,7 @@ const OrdersScreen: React.FC = () => {
               mode="contained"
               onPress={() => handleAcceptOrder(item)}
               style={styles.acceptButton}
+              icon="check"
             >
               Accept Order
             </Button>
