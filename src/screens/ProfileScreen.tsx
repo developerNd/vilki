@@ -4,6 +4,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  StatusBar,
 } from 'react-native';
 import {
   Card,
@@ -14,6 +15,7 @@ import {
   List,
   Divider,
   useTheme,
+  Surface,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -47,172 +49,233 @@ const ProfileScreen: React.FC = () => {
     );
   }
 
-
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Avatar.Text
-          size={80}
-          label={deliveryPartner?.name ? deliveryPartner.name.split(' ').map(n => n[0]).join('') : 'DP'}
-          style={styles.avatar}
-        />
-        <Title style={styles.name}>{deliveryPartner.name}</Title>
-        <Text style={styles.role}>Delivery Partner</Text>
-        <Text style={styles.partnerId}>ID: {deliveryPartner.id}</Text>
-      </View>
+    <View style={styles.container}>
+      <StatusBar backgroundColor="#6B7280" barStyle="light-content" />
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <View style={styles.headerBackground}>
+            <View style={styles.profileSection}>
+              <Avatar.Text
+                size={100}
+                label={deliveryPartner?.name ? deliveryPartner.name.split(' ').map(n => n[0]).join('') : 'DP'}
+                style={styles.avatar}
+                color="#FFFFFF"
+                labelStyle={styles.avatarLabel}
+              />
+              <View style={styles.profileInfo}>
+                <Text style={styles.name}>{deliveryPartner.name}</Text>
+                <Text style={styles.role}>Delivery Partner</Text>
+                <Text style={styles.partnerId}>ID: {deliveryPartner.id}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
 
-      <Card style={styles.card} mode="outlined">
-        <Card.Content>
-          <Title style={styles.sectionTitle}>Personal Information</Title>
-
+        <Surface style={styles.card} elevation={2}>
+          <View style={styles.cardHeader}>
+            <Icon name="person" size={20} color="#6B7280" />
+            <Title style={styles.sectionTitle}>Personal Information</Title>
+          </View>
           <List.Item
             title="Name"
             description={deliveryPartner.name}
-            left={(props) => <List.Icon {...props} icon="account" />}
+            left={(props) => <List.Icon {...props} icon="account" color="#6B7280" />}
             style={styles.listItem}
+            titleStyle={styles.listItemTitle}
+            descriptionStyle={styles.listItemDescription}
           />
-
           <List.Item
             title="Email"
-            description={deliveryPartner.email}
-            left={(props) => <List.Icon {...props} icon="email" />}
+            description={deliveryPartner.mail}
+            left={(props) => <List.Icon {...props} icon="email" color="#6B7280" />}
             style={styles.listItem}
+            titleStyle={styles.listItemTitle}
+            descriptionStyle={styles.listItemDescription}
           />
-
           <List.Item
             title="Phone"
             description={deliveryPartner.phone}
-            left={(props) => <List.Icon {...props} icon="phone" />}
+            left={(props) => <List.Icon {...props} icon="phone" color="#6B7280" />}
             style={styles.listItem}
+            titleStyle={styles.listItemTitle}
+            descriptionStyle={styles.listItemDescription}
           />
-        </Card.Content>
-      </Card>
+        </Surface>
 
-      <Card style={styles.card} mode="outlined">
-        <Card.Content>
-          <Title style={styles.sectionTitle}>Vehicle Information</Title>
-
+        <Surface style={styles.card} elevation={2}>
+          <View style={styles.cardHeader}>
+            <Icon name="motorcycle" size={20} color="#6B7280" />
+            <Title style={styles.sectionTitle}>Vehicle Information</Title>
+          </View>
           <List.Item
             title="Vehicle Type"
             description={deliveryPartner.vehicleType}
-            left={(props) => <List.Icon {...props} icon="motorcycle" />}
+            left={(props) => <List.Icon {...props} icon="motorcycle" color="#6B7280" />}
             style={styles.listItem}
+            titleStyle={styles.listItemTitle}
+            descriptionStyle={styles.listItemDescription}
           />
-
           <List.Item
             title="Vehicle Number"
             description={deliveryPartner.vehicleNumber}
-            left={(props) => <List.Icon {...props} icon="card-text" />}
+            left={(props) => <List.Icon {...props} icon="card-text" color="#6B7280" />}
             style={styles.listItem}
+            titleStyle={styles.listItemTitle}
+            descriptionStyle={styles.listItemDescription}
           />
-        </Card.Content>
-      </Card>
+        </Surface>
 
-      <Card style={styles.card} mode="outlined">
-        <Card.Content>
-          <Title style={styles.sectionTitle}>Account Status</Title>
-
+        <Surface style={styles.card} elevation={2}>
+          <View style={styles.cardHeader}>
+            <Icon name="check-circle" size={20} color="#6B7280" />
+            <Title style={styles.sectionTitle}>Account Status</Title>
+          </View>
           <View style={styles.statusContainer}>
             <View style={styles.statusRow}>
               <Icon
                 name={deliveryPartner.isActive ? 'check-circle' : 'cancel'}
                 size={24}
-                color={deliveryPartner.isActive ? '#4CAF50' : '#F44336'}
+                color={deliveryPartner.isActive ? '#10B981' : '#EF4444'}
               />
               <Text style={styles.statusText}>
                 {deliveryPartner.isActive ? 'Active' : 'Inactive'}
               </Text>
             </View>
           </View>
-        </Card.Content>
-      </Card>
+        </Surface>
 
-      <Card style={styles.card} mode="outlined">
-        <Card.Content>
-          <Title style={styles.sectionTitle}>App Information</Title>
-
+        <Surface style={styles.card} elevation={2}>
+          <View style={styles.cardHeader}>
+            <Icon name="information" size={20} color="#6B7280" />
+            <Title style={styles.sectionTitle}>App Information</Title>
+          </View>
           <List.Item
             title="App Version"
             description="1.0.0"
-            left={(props) => <List.Icon {...props} icon="information" />}
+            left={(props) => <List.Icon {...props} icon="information" color="#6B7280" />}
             style={styles.listItem}
+            titleStyle={styles.listItemTitle}
+            descriptionStyle={styles.listItemDescription}
           />
-
           <List.Item
             title="Last Updated"
             description={new Date().toLocaleDateString()}
-            left={(props) => <List.Icon {...props} icon="update" />}
+            left={(props) => <List.Icon {...props} icon="update" color="#6B7280" />}
             style={styles.listItem}
+            titleStyle={styles.listItemTitle}
+            descriptionStyle={styles.listItemDescription}
           />
-        </Card.Content>
-      </Card>
+        </Surface>
 
-      <View style={styles.buttonContainer}>
-        <Button
-          mode="contained"
-          onPress={handleLogout}
-          style={styles.logoutButton}
-          contentStyle={styles.logoutButtonContent}
-          icon="logout"
-        >
-          Logout
-        </Button>
-      </View>
+        <View style={styles.buttonContainer}>
+          <Button
+            mode="contained"
+            onPress={handleLogout}
+            style={styles.logoutButton}
+            contentStyle={styles.logoutButtonContent}
+            labelStyle={styles.logoutButtonLabel}
+            icon="logout"
+          >
+            Logout
+          </Button>
+        </View>
 
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          © 2024 Vilki Delivery Partner App
-        </Text>
-      </View>
-    </ScrollView>
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            © 2024 Vilki Delivery Partner App
+          </Text>
+        </View>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8FAFC',
+  },
+  scrollView: {
+    flex: 1,
   },
   header: {
+    backgroundColor: '#6B7280',
+    paddingTop: 20,
+    paddingBottom: 0,
+  },
+  headerBackground: {
+    backgroundColor: '#6B7280',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 32,
+  },
+  profileSection: {
     alignItems: 'center',
-    padding: 24,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   avatar: {
     marginBottom: 16,
+    backgroundColor: '#4B5563',
+  },
+  avatarLabel: {
+    fontSize: 36,
+    fontWeight: 'bold',
+  },
+  profileInfo: {
+    alignItems: 'center',
   },
   name: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#FFFFFF',
     marginBottom: 4,
   },
   role: {
     fontSize: 16,
-    color: '#666',
+    color: '#D1D5DB',
     marginBottom: 8,
+    fontWeight: '500',
   },
   partnerId: {
     fontSize: 14,
-    color: '#999',
+    color: '#9CA3AF',
     fontFamily: 'monospace',
+    fontWeight: '500',
   },
   card: {
-    margin: 16,
-    marginTop: 8,
-    borderRadius: 12,
+    margin: 20,
+    marginTop: 16,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    padding: 20,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 16,
+    color: '#1F2937',
+    marginLeft: 8,
   },
   listItem: {
-    paddingVertical: 8,
+    paddingVertical: 12,
+  },
+  listItemTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  listItemDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 2,
   },
   statusContainer: {
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
   statusRow: {
     flexDirection: 'row',
@@ -221,25 +284,33 @@ const styles = StyleSheet.create({
   statusText: {
     marginLeft: 12,
     fontSize: 16,
-    color: '#333',
+    color: '#374151',
+    fontWeight: '600',
   },
   buttonContainer: {
-    padding: 16,
+    padding: 20,
+    paddingTop: 8,
   },
   logoutButton: {
-    borderRadius: 8,
-    backgroundColor: '#F44336',
+    borderRadius: 12,
+    backgroundColor: '#EF4444',
   },
   logoutButtonContent: {
-    paddingVertical: 8,
+    paddingVertical: 12,
+  },
+  logoutButtonLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   footer: {
     alignItems: 'center',
-    padding: 16,
+    padding: 20,
+    paddingTop: 8,
   },
   footerText: {
     fontSize: 12,
-    color: '#999',
+    color: '#9CA3AF',
   },
 });
 

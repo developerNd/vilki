@@ -1,13 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Order, OrderStatus } from '../types';
 import { ordersAPI } from '../services/api';
+import { useAuth } from './AuthContext';
 
 interface OrderContextType {
   orders: Order[];
+  myOrders: Order[];
   currentOrder: Order | null;
   loading: boolean;
   fetchOrders: () => Promise<void>;
-  acceptOrder: (orderId: string) => Promise<void>;
+  fetchMyOrders: () => Promise<void>;
+  acceptOrder: (orderId: string, deliveryPartnerData?: any) => Promise<void>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
   setCurrentOrder: (order: Order | null) => void;
 }
@@ -24,9 +27,11 @@ export const useOrders = () => {
 
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [myOrders, setMyOrders] = useState<Order[]>([]);
   console.log(orders);
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
+  const { deliveryPartner } = useAuth();
 
   // Mock data for demonstration
   const mockOrders: Order[] = [
@@ -109,21 +114,76 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-
-  const acceptOrder = async (orderId: string) => {
+  const fetchMyOrders = async () => {
+    setLoading(true);
     try {
-      const response = await ordersAPI.acceptOrder(orderId);
+      const response = await ordersAPI.getMyOrders();
+      if (response && response.data) {
+        setMyOrders(response.data);
+      } else {
+        // Fallback to empty array if API fails
+        setMyOrders([]);
+      }
+    } catch (error) {
+      console.error('Error fetching my orders:', error);
+      // Fallback to empty array for development
+      setMyOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const acceptOrder = async (orderId: string, deliveryPartnerData?: any) => {
+    try {
+      // Use provided delivery partner data or get from context
+      const partnerData = deliveryPartnerData || deliveryPartner;
+      
+      console.log('🔍 OrderContext acceptOrder debug:');
+      console.log('Provided deliveryPartnerData:', deliveryPartnerData);
+      console.log('Context deliveryPartner:', deliveryPartner);
+      console.log('Final partnerData:', partnerData);
+      
+      if (!partnerData) {
+        throw new Error('Delivery partner data not available. Please login again.');
+      }
+      
+      const response = await ordersAPI.acceptOrder(orderId, partnerData);
       if (response) {
+        // Update only the specific order instead of reloading all orders
         setOrders(prevOrders =>
           prevOrders.map(order =>
             order.id === orderId
-              ? { ...order, status: OrderStatus.ASSIGNED, assignedTo: 'current-partner-id' }
+              ? {
+                  ...order,
+                  status: OrderStatus.ASSIGNED,
+                  assignedTo: partnerData.id.toString(),
+                  acceptedAt: new Date().toISOString(),
+                  // Add delivery_partner as a dynamic property
+                  ...(order as any),
+                  delivery_partner: partnerData
+                } as any
               : order
           )
         );
+        
+        // Also update currentOrder if it's the one being accepted
+        if (currentOrder?.id === orderId) {
+          setCurrentOrder({
+            ...currentOrder,
+            status: OrderStatus.ASSIGNED,
+            assignedTo: partnerData.id.toString(),
+            acceptedAt: new Date().toISOString(),
+            // Add delivery_partner as a dynamic property
+            ...(currentOrder as any),
+            delivery_partner: partnerData
+          } as any);
+        }
       }
+      return response;
     } catch (error) {
       console.error('Error accepting order:', error);
+      throw error; // Re-throw the error so UI can handle it
     }
   };
 
@@ -164,9 +224,11 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const value: OrderContextType = {
     orders,
+    myOrders,
     currentOrder,
     loading,
     fetchOrders,
+    fetchMyOrders,
     acceptOrder,
     updateOrderStatus,
     setCurrentOrder,

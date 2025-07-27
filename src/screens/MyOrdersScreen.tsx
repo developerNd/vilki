@@ -22,87 +22,91 @@ import { useAuth } from '../context/AuthContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '../types/navigation';
+import { OrderStatus } from '../types';
 
-const OrdersScreen: React.FC = () => {
-  const { orders, loading, fetchOrders, acceptOrder } = useOrders();
+const MyOrdersScreen: React.FC = () => {
+  const { myOrders, loading, fetchMyOrders, updateOrderStatus } = useOrders();
   const { deliveryPartner } = useAuth();
   const navigation = useNavigation<NavigationProp>();
   const theme = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    fetchOrders();
+    fetchMyOrders();
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchOrders();
+    await fetchMyOrders();
     setRefreshing(false);
   };
 
-  const handleAcceptOrder = (order: any) => {
+  const handleViewOrder = (order: any) => {
+    navigation.navigate('OrderDetails', { order, fromMyOrders: true });
+  };
+
+  const handleUpdateStatus = async (order: any, newStatus: string) => {
     Alert.alert(
-      'Accept Order',
-      `Do you want to accept order ${order.slug}?`,
+      'Update Status',
+      `Do you want to mark order ${order.slug} as ${getStatusText(newStatus)}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Accept',
+          text: 'Update',
           onPress: async () => {
-            await acceptOrder(order.id, deliveryPartner);
-            Alert.alert('Success', 'Order accepted successfully!');
+            await updateOrderStatus(order.id, newStatus as OrderStatus);
+            Alert.alert('Success', `Order status updated to ${getStatusText(newStatus)}`);
           },
         },
       ]
     );
   };
 
-  const handleViewOrder = (order: any) => {
-    navigation.navigate('OrderDetails', { order, fromMyOrders: false });
-  };
-
-  const getOrderStatus = (order: any) => {
-    // If delivery_partner is not null and equals current user ID, order is accepted by this delivery partner
-    if (order.delivery_partner && deliveryPartner && order.delivery_partner.id === deliveryPartner.id) {
-      return {
-        status: 'ASSIGNED',
-        text: 'Assigned to You',
-        color: '#F59E0B'
-      };
-    }
-    
-    // If delivery_partner is not null but different user, order is assigned to someone else
-    if (order.delivery_partner && order.delivery_partner.id !== deliveryPartner?.id) {
-      return {
-        status: 'ASSIGNED_OTHER',
-        text: 'Assigned to Other',
-        color: '#9CA3AF'
-      };
-    }
-    
-    // If no delivery_partner, show as available for acceptance
-    return {
-      status: 'AVAILABLE',
-      text: 'Available',
-      color: '#10B981'
-    };
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ASSIGNED':
         return '#F59E0B';
-      case 'ASSIGNED_OTHER':
-        return '#9CA3AF';
-      case 'AVAILABLE':
+      case 'PICKED_UP':
+        return '#8B5CF6';
+      case 'IN_TRANSIT':
+        return '#EF4444';
+      case 'DELIVERED':
         return '#10B981';
+      case 'DECLINED':
+        return '#EF4444';
       default:
         return '#6B7280';
     }
   };
 
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'ASSIGNED':
+        return 'Assigned';
+      case 'PICKED_UP':
+        return 'Picked Up';
+      case 'IN_TRANSIT':
+        return 'In Transit';
+      case 'DELIVERED':
+        return 'Delivered';
+      case 'DECLINED':
+        return 'Declined';
+      default:
+        return status;
+    }
+  };
+
+  const getNextStatus = (currentStatus: string) => {
+    const statusFlow = {
+      'ASSIGNED': 'PICKED_UP',
+      'PICKED_UP': 'IN_TRANSIT',
+      'IN_TRANSIT': 'DELIVERED',
+    };
+    return statusFlow[currentStatus as keyof typeof statusFlow] || null;
+  };
+
   const renderOrderItem = ({ item }: { item: any }) => {
-    const orderStatus = getOrderStatus(item);
+    const nextStatus = getNextStatus(item.status);
     
     return (
       <Surface style={styles.orderCard} elevation={2}>
@@ -113,10 +117,10 @@ const OrdersScreen: React.FC = () => {
           </View>
           <Chip
             mode="outlined"
-            textStyle={{ color: orderStatus.color, fontWeight: '600' }}
-            style={[styles.statusChip, { borderColor: orderStatus.color, backgroundColor: `${orderStatus.color}10` }]}
+            textStyle={{ color: getStatusColor(item.status), fontWeight: '600' }}
+            style={[styles.statusChip, { borderColor: getStatusColor(item.status), backgroundColor: `${getStatusColor(item.status)}10` }]}
           >
-            {orderStatus.text}
+            {getStatusText(item.status)}
           </Chip>
         </View>
 
@@ -150,15 +154,23 @@ const OrdersScreen: React.FC = () => {
               <Text style={styles.detailValue}>₹{item.total_amount}</Text>
             </View>
           </View>
+          {item.acceptedAt && (
+            <View style={styles.detailRow}>
+              <View style={styles.detailItem}>
+                <Icon name="schedule" size={14} color="#6B7280" />
+                <Text style={styles.detailLabel}>Accepted:</Text>
+                <Text style={styles.detailValue}>
+                  {new Date(item.acceptedAt).toLocaleDateString()}
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
 
         <View style={styles.actionButtons}>
           <Button
             mode="outlined"
-            onPress={() => {
-              console.log('View Details pressed for order:', item.slug);
-              handleViewOrder(item);
-            }}
+            onPress={() => handleViewOrder(item)}
             style={styles.viewButton}
             contentStyle={styles.buttonContent}
             labelStyle={styles.buttonLabel}
@@ -166,17 +178,16 @@ const OrdersScreen: React.FC = () => {
           >
             View Details
           </Button>
-          {/* Show Accept button only if order is not assigned to anyone */}
-          {!item.delivery_partner && (
+          {nextStatus && (
             <Button
               mode="contained"
-              onPress={() => handleAcceptOrder(item)}
-              style={styles.acceptButton}
+              onPress={() => handleUpdateStatus(item, nextStatus)}
+              style={styles.updateButton}
               contentStyle={styles.buttonContent}
-              labelStyle={styles.acceptButtonLabel}
-              icon="check"
+              labelStyle={styles.updateButtonLabel}
+              icon="check-circle"
             >
-              Accept Order
+              Mark as {getStatusText(nextStatus)}
             </Button>
           )}
         </View>
@@ -188,35 +199,35 @@ const OrdersScreen: React.FC = () => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#2563EB" />
-        <Text style={styles.loadingText}>Loading orders...</Text>
+        <Text style={styles.loadingText}>Loading your orders...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <StatusBar backgroundColor="#2563EB" barStyle="light-content" />
+      <StatusBar backgroundColor="#10B981" barStyle="light-content" />
       
       <View style={styles.header}>
         <View style={styles.headerBackground}>
           <View style={styles.headerContent}>
             <View style={styles.welcomeSection}>
               <View style={styles.greetingContainer}>
-                <Text style={styles.greetingText}>Good morning,</Text>
+                <Text style={styles.greetingText}>Your Orders</Text>
                 <Text style={styles.userName}>{deliveryPartner?.name}</Text>
               </View>
               <Text style={styles.headerSubtitle}>
-                Ready to deliver? Here are your available orders
+                Manage and track your assigned deliveries
               </Text>
             </View>
             <View style={styles.statsContainer}>
               <View style={styles.statCard}>
                 <View style={styles.statIconContainer}>
-                  <Icon name="local-shipping" size={24} color="#FFFFFF" />
+                  <Icon name="assignment" size={24} color="#FFFFFF" />
                 </View>
                 <View style={styles.statContent}>
-                  <Text style={styles.statNumber}>{orders.length}</Text>
-                  <Text style={styles.statLabel}>Available</Text>
+                  <Text style={styles.statNumber}>{myOrders.length}</Text>
+                  <Text style={styles.statLabel}>Active</Text>
                 </View>
               </View>
             </View>
@@ -225,7 +236,7 @@ const OrdersScreen: React.FC = () => {
       </View>
 
       <FlatList
-        data={orders}
+        data={myOrders}
         renderItem={renderOrderItem}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
@@ -233,17 +244,17 @@ const OrdersScreen: React.FC = () => {
           <RefreshControl 
             refreshing={refreshing} 
             onRefresh={onRefresh}
-            colors={['#2563EB']}
-            tintColor="#2563EB"
+            colors={['#10B981']}
+            tintColor="#10B981"
           />
         }
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Icon name="local-shipping" size={80} color="#D1D5DB" />
-            <Text style={styles.emptyText}>No orders available</Text>
+            <Icon name="assignment" size={80} color="#D1D5DB" />
+            <Text style={styles.emptyText}>No orders assigned</Text>
             <Text style={styles.emptySubtext}>
-              Pull to refresh for new orders
+              You don't have any active orders yet
             </Text>
           </View>
         }
@@ -258,12 +269,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   header: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#10B981',
     paddingTop: 20,
     paddingBottom: 0,
   },
   headerBackground: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#10B981',
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     paddingHorizontal: 20,
@@ -283,7 +294,7 @@ const styles = StyleSheet.create({
   },
   greetingText: {
     fontSize: 16,
-    color: '#DBEAFE',
+    color: '#D1FAE5',
     fontWeight: '500',
   },
   userName: {
@@ -294,7 +305,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#DBEAFE',
+    color: '#D1FAE5',
     fontWeight: '500',
     lineHeight: 20,
   },
@@ -321,7 +332,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 12,
-    color: '#DBEAFE',
+    color: '#D1FAE5',
     fontWeight: '500',
   },
   listContainer: {
@@ -391,6 +402,7 @@ const styles = StyleSheet.create({
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 8,
   },
   detailItem: {
     flexDirection: 'row',
@@ -419,11 +431,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderColor: '#E5E7EB',
   },
-  acceptButton: {
+  updateButton: {
     flex: 1,
     marginLeft: 8,
     borderRadius: 12,
-    backgroundColor: '#10B981',
+    backgroundColor: '#2563EB',
   },
   buttonContent: {
     paddingVertical: 8,
@@ -433,7 +445,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#374151',
   },
-  acceptButtonLabel: {
+  updateButtonLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
@@ -470,4 +482,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default OrdersScreen;
+export default MyOrdersScreen; 

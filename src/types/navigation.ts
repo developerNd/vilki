@@ -4,7 +4,7 @@ import { Order } from './index';
 export type RootStackParamList = {
   Login: undefined;
   Main: undefined;
-  OrderDetails: { order: Order };
+  OrderDetails: { order: Order; fromMyOrders?: boolean };
 };
 
 export type TabParamList = {

@@ -4,8 +4,37 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ApiResponse, DeliveryPartner, Order, Earnings } from '../types';
 
-export const IP = "https://api.vilkimedicart.in";
+// Environment-based IP configuration
+const isDev = __DEV__;
+
+// Configuration options for different development scenarios
+const DEV_CONFIGS = {
+  // Option 1: If backend is on same machine as emulator (MacBook)
+  LOCALHOST: "http://10.0.2.2:1337",
+  
+  // Option 2: If backend is on Windows laptop (same network)
+  WINDOWS_LAPTOP: "http://192.168.1.102:1337",
+  
+  // Option 4: Production fallback
+  PRODUCTION: "https://api.vilkimedicart.in"
+};
+
+// Force development mode for testing
+const FORCE_DEV = true; // Set this to false when you want production
+
+// Choose your development configuration here
+const DEV_IP = DEV_CONFIGS.WINDOWS_LAPTOP; // Windows laptop IP
+// const DEV_IP = DEV_CONFIGS.LOCALHOST; // If backend on MacBook
+// const DEV_IP = DEV_CONFIGS.PRODUCTION; // Temporary: Use production for testing
+
+export const IP = (isDev || FORCE_DEV) ? DEV_IP : DEV_CONFIGS.PRODUCTION;
 export const baseURL = `${IP}/api`;
+
+// Log the current environment and API URL
+// console.log(`🚀 Environment: ${isDev ? 'Development' : 'Production'}`);
+// console.log(`🔧 Force Dev Mode: ${FORCE_DEV}`);
+// console.log(`🌐 API Base URL: ${baseURL}`);
+// console.log(`📱 __DEV__ value: ${__DEV__}`);
 
 // Axios instance (still useful)
 const api = axios.create({
@@ -21,9 +50,12 @@ api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    console.log('API Request with token:', config.method?.toUpperCase(), config.url);
+    console.log('🔐 API Request with token:', config.method?.toUpperCase(), config.url);
+    console.log('🔑 Token preview:', token.substring(0, 20) + '...');
+    console.log('📋 Request headers:', config.headers);
   } else {
-    console.log('API Request without token:', config.method?.toUpperCase(), config.url);
+    console.log('⚠️ API Request without token:', config.method?.toUpperCase(), config.url);
+    console.log('🔍 Token not found in AsyncStorage');
   }
   return config;
 });
@@ -34,9 +66,18 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       console.log('401 Unauthorized - Token might be invalid or expired');
-      // Optionally clear token and redirect to login
-      AsyncStorage.removeItem('token');
-      AsyncStorage.removeItem('deliveryPartner');
+      console.log('Request URL:', error.config?.url);
+      console.log('Request method:', error.config?.method);
+      
+      // Only clear token for certain endpoints, not for order operations
+      const url = error.config?.url || '';
+      if (url.includes('/delivery-partner/login') || url.includes('/auth/')) {
+        console.log('Clearing token for auth-related endpoint');
+        AsyncStorage.removeItem('token');
+        AsyncStorage.removeItem('deliveryPartner');
+      } else {
+        console.log('Not clearing token for non-auth endpoint:', url);
+      }
     }
     return Promise.reject(error);
   }
@@ -53,22 +94,55 @@ export const getHeader = async () => {
   };
 };
 
+// Debug function to check authentication state
+export const debugAuthState = async () => {
+  const token = await AsyncStorage.getItem('token');
+  const deliveryPartner = await AsyncStorage.getItem('deliveryPartner');
+  
+  console.log('🔍 Debug Auth State:');
+  console.log('Token exists:', !!token);
+  console.log('Token length:', token?.length || 0);
+  console.log('Delivery partner exists:', !!deliveryPartner);
+  
+  if (deliveryPartner) {
+    try {
+      const partnerData = JSON.parse(deliveryPartner);
+      console.log('Partner ID:', partnerData.id);
+      console.log('Partner Name:', partnerData.name);
+    } catch (e) {
+      console.log('Error parsing delivery partner data:', e);
+    }
+  }
+  
+  return { token: !!token, deliveryPartner: !!deliveryPartner };
+};
+
 // ✅ Auth API
 export const authAPI = {
   login: async (partnerid: string, password: string) => {
     try {
+      console.log('🔗 Attempting to connect to:', `${baseURL}/delivery-partner/login`);
+      console.log('📤 Sending data:', { partnerid, password });
+      
       const res = await axios.post(`${baseURL}/delivery-partner/login`, {
         partnerid,
         password,
       });
 
+      console.log('✅ Login successful:', res.data);
       const { jwt, user } = res.data;
       await AsyncStorage.setItem('token', jwt);
       await AsyncStorage.setItem('deliveryPartner', JSON.stringify(user));
 
       return { success: true, user };
     } catch (err: any) {
-      console.error('Login error:', err?.response?.data || err);
+      console.error('❌ Login error details:', {
+        message: err.message,
+        code: err.code,
+        response: err.response?.data,
+        status: err.response?.status,
+        url: err.config?.url
+      });
       return { success: false, error: err.message };
     }
   },
@@ -112,18 +186,97 @@ export const ordersAPI = {
   },
 
   getMyOrders: async () => {
-    const res = await api.get('/orders', {
-      params: { assignedTo: 'me', populate: '*' },
-    });
-    return res.data;
+    try {
+      console.log('🔗 Fetching my orders...');
+      
+      // Get current delivery partner data
+      const deliveryPartner = await AsyncStorage.getItem('deliveryPartner');
+      if (!deliveryPartner) {
+        throw new Error('Delivery partner data not found. Please login again.');
+      }
+      
+      const partnerData = JSON.parse(deliveryPartner);
+      console.log('👤 Fetching orders for partner ID:', partnerData.id);
+      
+      const res = await api.get('/delivery-partner/orders', {
+        params: { 
+          partnerId: partnerData.id,
+          populate: '*' 
+        },
+      });
+      
+      console.log('✅ My orders fetched successfully:', res.data);
+      return res.data;
+    } catch (error: any) {
+      console.error('❌ Error fetching my orders:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+      throw error;
+    }
   },
 
-  acceptOrder: async (orderId: string) => {
-    const res = await api.put(
-      `/orders/${orderId}`,
-      { status: 'assigned', assignedTo: 'me' }
-    );
-    return res.data;
+  acceptOrder: async (orderId: string, deliveryPartnerData?: any) => {
+    try {
+      console.log('🔗 Accepting order:', orderId);
+      
+      // Debug authentication state
+      await debugAuthState();
+      
+      // Check if user is logged in
+      const token = await AsyncStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('User not logged in. Please login again.');
+      }
+      
+      // Use provided delivery partner data or get from AsyncStorage
+      let partnerData = deliveryPartnerData;
+      if (!partnerData) {
+        const deliveryPartner = await AsyncStorage.getItem('deliveryPartner');
+        if (!deliveryPartner) {
+          throw new Error('Delivery partner data not found. Please login again.');
+        }
+        partnerData = JSON.parse(deliveryPartner);
+      }
+      
+      console.log('👤 Current delivery partner:', partnerData);
+      
+      const requestData = {
+        delivery_partner: partnerData.id,
+        status: 'ASSIGNED'
+      };
+      
+      console.log('📤 Request data:', requestData);
+      
+      // Try different endpoint formats
+      let res;
+      try {
+        // First try the original endpoint with POST
+        res = await api.post(`/delivery-partner/orders/${orderId}/accept`, requestData);
+      } catch (error: any) {
+        if (error.response?.status === 401 || error.response?.status === 404) {
+          console.log('🔄 Trying alternative endpoint format...');
+          // Try delivery-partner specific endpoint
+          res = await api.post(`/delivery-partner/orders/${orderId}/accept`, requestData);
+        } else {
+          throw error;
+        }
+      }
+      
+      console.log('✅ Order accepted successfully:', res.data);
+      return res.data;
+    } catch (error: any) {
+      console.error('❌ Accept order error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+      throw error;
+    }
   },
 
   updateOrderStatus: async (orderId: string, status: string) => {
