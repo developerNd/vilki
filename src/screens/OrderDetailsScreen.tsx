@@ -122,6 +122,15 @@ const OrderDetailsScreen: React.FC = () => {
   };
 
   const getOrderStatus = (order: any) => {
+    // If coming from MyOrders screen, always show "Assigned to You" since these are your orders
+    if (fromMyOrders) {
+      return {
+        status: 'ASSIGNED',
+        text: 'Assigned to You',
+        color: '#F59E0B'
+      };
+    }
+    
     // If delivery_partner is not null and equals current user ID, order is accepted by this delivery partner
     if (order.delivery_partner && deliveryPartner && order.delivery_partner.id === deliveryPartner.id) {
       return {
@@ -214,8 +223,8 @@ const OrderDetailsScreen: React.FC = () => {
 
           <Divider style={styles.divider} />
 
-          {/* Show delivery partner info if assigned */}
-          {order.delivery_partner && (
+          {/* Show delivery partner info if assigned or coming from MyOrders */}
+          {(order.delivery_partner || fromMyOrders) && (
             <>
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
@@ -226,12 +235,12 @@ const OrderDetailsScreen: React.FC = () => {
                   <Icon name="local-shipping" size={20} color="#10B981" />
                   <View style={styles.deliveryPartnerContent}>
                     <Text style={styles.deliveryPartnerName}>
-                      {order.delivery_partner.name}
+                      {order.delivery_partner?.name || deliveryPartner?.name || 'You'}
                     </Text>
                     <Text style={styles.deliveryPartnerPhone}>
-                      {order.delivery_partner.phone}
+                      {order.delivery_partner?.phone || deliveryPartner?.phone || 'N/A'}
                     </Text>
-                    {order.delivery_partner.id === deliveryPartner?.id && (
+                    {(order.delivery_partner?.id === deliveryPartner?.id || fromMyOrders) && (
                       <Chip mode="outlined" style={styles.assignedChip} textStyle={{ color: '#10B981' }}>
                         Assigned to You
                       </Chip>
@@ -325,7 +334,7 @@ const OrderDetailsScreen: React.FC = () => {
           </View>
 
           {/* Show action buttons only for orders assigned to current user */}
-          {order.delivery_partner && deliveryPartner && order.delivery_partner.id === deliveryPartner.id && nextStatus && (
+          {((order.delivery_partner && deliveryPartner && order.delivery_partner.id === deliveryPartner.id) || fromMyOrders) && nextStatus && (
             <View style={styles.actionSection}>
               <Button
                 mode="contained"
