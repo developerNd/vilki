@@ -70,7 +70,7 @@ const OrdersScreen: React.FC = () => {
         color: '#F59E0B'
       };
     }
-    
+
     // If delivery_partner is not null but different user, order is assigned to someone else
     if (order.delivery_partner && order.delivery_partner.id !== deliveryPartner?.id) {
       return {
@@ -79,7 +79,7 @@ const OrdersScreen: React.FC = () => {
         color: '#9CA3AF'
       };
     }
-    
+
     // If no delivery_partner, show as available for acceptance
     return {
       status: 'AVAILABLE',
@@ -103,7 +103,7 @@ const OrdersScreen: React.FC = () => {
 
   const renderOrderItem = ({ item }: { item: any }) => {
     const orderStatus = getOrderStatus(item);
-    
+
     return (
       <Surface style={styles.orderCard} elevation={2}>
         <View style={styles.orderHeader}>
@@ -196,7 +196,7 @@ const OrdersScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#2563EB" barStyle="light-content" />
-      
+
       <View style={styles.header}>
         <View style={styles.headerBackground}>
           <View style={styles.headerContent}>
@@ -230,8 +230,8 @@ const OrdersScreen: React.FC = () => {
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
+          <RefreshControl
+            refreshing={refreshing}
             onRefresh={onRefresh}
             colors={['#2563EB']}
             tintColor="#2563EB"
@@ -258,12 +258,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   header: {
-    backgroundColor: '#2563EB',
-    paddingTop: 20,
+    backgroundColor: '#4367b6ff',
+    paddingTop: 50,
     paddingBottom: 0,
   },
   headerBackground: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#4367b6ff',
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     paddingHorizontal: 20,

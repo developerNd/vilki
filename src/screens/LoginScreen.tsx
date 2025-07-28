@@ -31,7 +31,7 @@ const LoginScreen: React.FC = () => {
   const { login, isAuthenticated } = useAuth();
   const navigation = useNavigation();
   const theme = useTheme();
-  
+
   // Create a ref for password input to enable focusing programmatically
   const passwordInputRef = useRef<any>(null);
 
@@ -234,7 +234,7 @@ const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#4367b6ff',
   },
   keyboardContainer: {
     flex: 1,

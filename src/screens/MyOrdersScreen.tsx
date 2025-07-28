@@ -107,7 +107,7 @@ const MyOrdersScreen: React.FC = () => {
 
   const renderOrderItem = ({ item }: { item: any }) => {
     const nextStatus = getNextStatus(item.status);
-    
+
     return (
       <Surface style={styles.orderCard} elevation={2}>
         <View style={styles.orderHeader}>
@@ -207,7 +207,7 @@ const MyOrdersScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#10B981" barStyle="light-content" />
-      
+
       <View style={styles.header}>
         <View style={styles.headerBackground}>
           <View style={styles.headerContent}>
@@ -241,8 +241,8 @@ const MyOrdersScreen: React.FC = () => {
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
+          <RefreshControl
+            refreshing={refreshing}
             onRefresh={onRefresh}
             colors={['#10B981']}
             tintColor="#10B981"
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#10B981',
-    paddingTop: 20,
+    paddingTop: 50,
     paddingBottom: 0,
   },
   headerBackground: {

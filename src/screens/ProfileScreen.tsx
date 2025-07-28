@@ -200,12 +200,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    backgroundColor: '#6B7280',
-    paddingTop: 20,
+    backgroundColor: '#446dbeff',
+    paddingTop: 50,
     paddingBottom: 0,
   },
   headerBackground: {
-    backgroundColor: '#6B7280',
+    backgroundColor: '#446dbeff',
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     paddingHorizontal: 20,
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   },
   avatar: {
     marginBottom: 16,
-    backgroundColor: '#4B5563',
+    backgroundColor: '#232f41ff',
   },
   avatarLabel: {
     fontSize: 36,

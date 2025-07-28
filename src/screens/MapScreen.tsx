@@ -38,12 +38,12 @@ const MapScreen: React.FC = () => {
           Your location and nearby delivery orders
         </Text>
       </View>
-      
+
       {/* Mock location marker */}
       <View style={styles.locationMarker}>
         <Icon name="my-location" size={24} color="#2563EB" />
       </View>
-      
+
       {/* Mock order markers */}
       {orders.slice(0, 3).map((order, index) => (
         <View
@@ -71,7 +71,7 @@ const MapScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#8B5CF6" barStyle="light-content" />
-      
+
       <View style={styles.header}>
         <View style={styles.headerBackground}>
           <View style={styles.headerContent}>
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#8B5CF6',
-    paddingTop: 20,
+    paddingTop: 50,
     paddingBottom: 0,
   },
   headerBackground: {

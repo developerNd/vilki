@@ -129,8 +129,8 @@ const EarningsScreen: React.FC = () => {
       <ScrollView
         style={styles.scrollView}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
+          <RefreshControl
+            refreshing={refreshing}
             onRefresh={onRefresh}
             colors={['#F59E0B']}
             tintColor="#F59E0B"
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#F59E0B',
-    paddingTop: 20,
+    paddingTop: 50,
     paddingBottom: 0,
   },
   headerBackground: {
