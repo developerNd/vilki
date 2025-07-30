@@ -47,6 +47,20 @@ const OrderDetailsScreen: React.FC = () => {
     }
   };
 
+  const handleGetDirections = () => {
+    if (order.address) {
+      const address = encodeURIComponent(
+        `${order.address.addressLine1}, ${order.address.city}, ${order.address.state} ${order.address.pincode}`
+      );
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${address}`;
+      Linking.openURL(url).catch(() => {
+        Alert.alert('Error', 'Unable to open directions');
+      });
+    } else {
+      Alert.alert('Error', 'Delivery address not available');
+    }
+  };
+
   const handleUpdateStatus = async (newStatus: string) => {
     setUpdating(true);
     try {
@@ -72,7 +86,6 @@ const OrderDetailsScreen: React.FC = () => {
             try {
               await acceptOrder(order.id, deliveryPartner);
               Alert.alert('Success', 'Order accepted successfully!');
-              // Navigate back to orders list to see updated status
               navigation.goBack();
             } catch (error: any) {
               console.error('Accept order error in UI:', error);
@@ -122,7 +135,6 @@ const OrderDetailsScreen: React.FC = () => {
   };
 
   const getOrderStatus = (order: any) => {
-    // If coming from MyOrders screen, always show "Assigned to You" since these are your orders
     if (fromMyOrders) {
       return {
         status: 'ASSIGNED',
@@ -131,7 +143,6 @@ const OrderDetailsScreen: React.FC = () => {
       };
     }
     
-    // If delivery_partner is not null and equals current user ID, order is accepted by this delivery partner
     if (order.delivery_partner && deliveryPartner && order.delivery_partner.id === deliveryPartner.id) {
       return {
         status: 'ASSIGNED',
@@ -140,7 +151,6 @@ const OrderDetailsScreen: React.FC = () => {
       };
     }
     
-    // If delivery_partner is not null but different user, order is assigned to someone else
     if (order.delivery_partner && order.delivery_partner.id !== deliveryPartner?.id) {
       return {
         status: 'ASSIGNED_OTHER',
@@ -149,7 +159,6 @@ const OrderDetailsScreen: React.FC = () => {
       };
     }
     
-    // If no delivery_partner, show admin status
     return {
       status: order.status,
       text: getStatusText(order.status),
@@ -167,6 +176,17 @@ const OrderDetailsScreen: React.FC = () => {
 
   const orderStatus = getOrderStatus(order);
   const nextStatus = nextStatusMap[orderStatus.status] ?? null;
+
+  // Format pickup address (assuming it comes from seller-infos address field)
+  const pickupAddress = order.pickupAddress
+    ? {
+        addressLine1: order.pickupAddress.addressLine1 || order.pickupAddress.address || 'N/A',
+        city: order.pickupAddress.city || '',
+        state: order.pickupAddress.state || '',
+        pincode: order.pickupAddress.pincode || '',
+        addressLine2: order.pickupAddress.addressLine2 || ''
+      }
+    : { addressLine1: 'N/A', city: '', state: '', pincode: '', addressLine2: '' };
 
   return (
     <View style={styles.container}>
@@ -223,7 +243,6 @@ const OrderDetailsScreen: React.FC = () => {
 
           <Divider style={styles.divider} />
 
-          {/* Show delivery partner info if assigned or coming from MyOrders */}
           {(order.delivery_partner || fromMyOrders) && (
             <>
               <View style={styles.section}>
@@ -254,6 +273,29 @@ const OrderDetailsScreen: React.FC = () => {
 
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
+              <Icon name="store" size={20} color="#F59E0B" />
+              <Text style={styles.sectionTitle}>Pickup Address</Text>
+            </View>
+            <View style={styles.addressCard}>
+              <Icon name="store" size={20} color="#F59E0B" />
+              <View style={styles.addressContent}>
+                <Text style={styles.addressText}>{pickupAddress.addressLine1}</Text>
+                <Text style={styles.addressText}>
+                  {pickupAddress.city}, {pickupAddress.state}, {pickupAddress.pincode}
+                </Text>
+                {pickupAddress.addressLine2 ? (
+                  <Text style={styles.instructions}>
+                    {pickupAddress.addressLine2}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+          </View>
+
+          <Divider style={styles.divider} />
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
               <Icon name="location-on" size={20} color="#EF4444" />
               <Text style={styles.sectionTitle}>Delivery Address</Text>
             </View>
@@ -269,6 +311,16 @@ const OrderDetailsScreen: React.FC = () => {
                     {order.address.addressLine2}
                   </Text>
                 ) : null}
+                <Button
+                  mode="contained"
+                  onPress={handleGetDirections}
+                  style={styles.getDirectionsButton}
+                  contentStyle={styles.getDirectionsButtonContent}
+                  labelStyle={styles.getDirectionsButtonLabel}
+                  icon="directions"
+                >
+                  Get Directions
+                </Button>
               </View>
             </View>
           </View>
@@ -333,7 +385,6 @@ const OrderDetailsScreen: React.FC = () => {
             )}
           </View>
 
-          {/* Show action buttons only for orders assigned to current user */}
           {((order.delivery_partner && deliveryPartner && order.delivery_partner.id === deliveryPartner.id) || fromMyOrders) && nextStatus && (
             <View style={styles.actionSection}>
               <Button
@@ -351,7 +402,6 @@ const OrderDetailsScreen: React.FC = () => {
             </View>
           )}
 
-          {/* Show accept button if order is not assigned to anyone AND not coming from MyOrders */}
           {!order.delivery_partner && !fromMyOrders && (
             <View style={styles.actionSection}>
               <Button
@@ -369,7 +419,6 @@ const OrderDetailsScreen: React.FC = () => {
             </View>
           )}
 
-          {/* Show message if order is assigned to someone else */}
           {order.delivery_partner && deliveryPartner && order.delivery_partner.id !== deliveryPartner.id && (
             <View style={styles.actionSection}>
               <Text style={styles.infoMessage}>
@@ -478,6 +527,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     color: '#6B7280',
+  },
+  getDirectionsButton: {
+    marginTop: 12,
+    borderRadius: 8,
+    backgroundColor: '#2563EB',
+    alignSelf: 'flex-start',
+  },
+  getDirectionsButtonContent: {
+    paddingVertical: 8,
+  },
+  getDirectionsButtonLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   itemRow: {
     flexDirection: 'row',
