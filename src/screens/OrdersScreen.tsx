@@ -16,6 +16,7 @@ import {
   useTheme,
   ActivityIndicator,
   Surface,
+  SegmentedButtons,
 } from 'react-native-paper';
 import { useOrders } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
@@ -23,12 +24,15 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '../types/navigation';
 
+type OrderType = 'stockist' | 'direct';
+
 const OrdersScreen: React.FC = () => {
   const { orders, loading, fetchOrders, acceptOrder } = useOrders();
   const { deliveryPartner } = useAuth();
   const navigation = useNavigation<NavigationProp>();
   const theme = useTheme();
   const [refreshing, setRefreshing] = useState(false);
+  const [activeOrderType, setActiveOrderType] = useState<OrderType>('stockist');
 
   useEffect(() => {
     fetchOrders();
@@ -67,7 +71,7 @@ const OrdersScreen: React.FC = () => {
       return {
         status: 'ASSIGNED',
         text: 'Assigned to You',
-        color: '#F59E0B'
+        color: '#2563EB'
       };
     }
 
@@ -76,7 +80,7 @@ const OrdersScreen: React.FC = () => {
       return {
         status: 'ASSIGNED_OTHER',
         text: 'Assigned to Other',
-        color: '#9CA3AF'
+        color: '#FF4757'
       };
     }
 
@@ -84,50 +88,79 @@ const OrdersScreen: React.FC = () => {
     return {
       status: 'AVAILABLE',
       text: 'Available',
-      color: '#10B981'
+      color: '#00D4AA'
     };
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ASSIGNED':
-        return '#F59E0B';
+        return '#2563EB'; // Bright blue
       case 'ASSIGNED_OTHER':
-        return '#9CA3AF';
+        return '#FF4757'; // Bright red
       case 'AVAILABLE':
-        return '#10B981';
+        return '#00D4AA'; // Bright teal
       default:
-        return '#6B7280';
+        return '#FFD93D'; // Bright yellow
     }
   };
+
+  // Filter orders based on active tab
+  const getFilteredOrders = () => {
+    if (activeOrderType === 'stockist') {
+      // Show stockist orders (current orders that are from wholesalers/stockists)
+      return orders.filter(order => order.orderType === 'stockist' || !order.orderType);
+    } else {
+      // Show direct orders (orders from retailers directly)
+      return orders.filter(order => order.orderType === 'direct');
+    }
+  };
+
+  const filteredOrders = getFilteredOrders();
 
   const renderOrderItem = ({ item }: { item: any }) => {
     const orderStatus = getOrderStatus(item);
 
     return (
-      <Surface style={styles.orderCard} elevation={2}>
+      <Surface style={styles.orderCard} elevation={3}>
         <View style={styles.orderHeader}>
           <View style={styles.orderNumberContainer}>
-            <Icon name="receipt" size={20} color="#2563EB" />
+            <Icon name="receipt" size={24} color="#2563EB" />
             <Title style={styles.orderNumber}>{item.slug}</Title>
           </View>
-          <Chip
-            mode="outlined"
-            textStyle={{ color: orderStatus.color, fontWeight: '600' }}
-            style={[styles.statusChip, { borderColor: orderStatus.color, backgroundColor: `${orderStatus.color}10` }]}
-          >
-            {orderStatus.text}
-          </Chip>
+          <View style={styles.orderTypeContainer}>
+            <Chip
+              mode="outlined"
+              textStyle={{ color: orderStatus.color, fontWeight: '700', fontSize: 12 }}
+              style={[styles.statusChip, { borderColor: orderStatus.color, backgroundColor: `${orderStatus.color}20` }]}
+            >
+              {orderStatus.text}
+            </Chip>
+            <Chip
+              mode="outlined"
+              textStyle={{ 
+                color: activeOrderType === 'stockist' ? '#2563EB' : '#00D4AA', 
+                fontWeight: '700',
+                fontSize: 11
+              }}
+              style={[styles.typeChip, { 
+                borderColor: activeOrderType === 'stockist' ? '#2563EB' : '#00D4AA', 
+                backgroundColor: activeOrderType === 'stockist' ? '#2563EB20' : '#00D4AA20' 
+              }]}
+            >
+              {activeOrderType === 'stockist' ? 'Stockist' : 'Direct'}
+            </Chip>
+          </View>
         </View>
 
         <View style={styles.customerInfo}>
-          <Icon name="person" size={16} color="#6B7280" />
+          <Icon name="person" size={18} color="#2563EB" />
           <Text style={styles.customerText}>{item.consumerName}</Text>
         </View>
 
         <View style={styles.addressContainer}>
           <View style={styles.addressRow}>
-            <Icon name="location-on" size={16} color="#EF4444" />
+            <Icon name="location-on" size={18} color="#FF4757" />
             <Text style={styles.addressLabel}>Address:</Text>
             <Text style={styles.addressText} numberOfLines={2}>
               {item.address?.addressLine1 ?? 'N/A'}
@@ -138,14 +171,14 @@ const OrdersScreen: React.FC = () => {
         <View style={styles.orderDetails}>
           <View style={styles.detailRow}>
             <View style={styles.detailItem}>
-              <Icon name="inventory" size={14} color="#6B7280" />
+              <Icon name="inventory" size={16} color="#2563EB" />
               <Text style={styles.detailLabel}>Items:</Text>
               <Text style={styles.detailValue}>
                 {(item.order_products?.length ?? 0)} items
               </Text>
             </View>
             <View style={styles.detailItem}>
-              <Icon name="payments" size={14} color="#6B7280" />
+              <Icon name="payments" size={16} color="#00D4AA" />
               <Text style={styles.detailLabel}>Amount:</Text>
               <Text style={styles.detailValue}>₹{item.total_amount}</Text>
             </View>
@@ -212,10 +245,10 @@ const OrdersScreen: React.FC = () => {
             <View style={styles.statsContainer}>
               <View style={styles.statCard}>
                 <View style={styles.statIconContainer}>
-                  <Icon name="local-shipping" size={24} color="#FFFFFF" />
+                  <Icon name="local-shipping" size={28} color="#FFFFFF" />
                 </View>
                 <View style={styles.statContent}>
-                  <Text style={styles.statNumber}>{orders.length}</Text>
+                  <Text style={styles.statNumber}>{filteredOrders.length}</Text>
                   <Text style={styles.statLabel}>Available</Text>
                 </View>
               </View>
@@ -224,8 +257,33 @@ const OrdersScreen: React.FC = () => {
         </View>
       </View>
 
+      {/* Order Type Selector */}
+      <View style={styles.tabContainer}>
+        <SegmentedButtons
+          value={activeOrderType}
+          onValueChange={setActiveOrderType as (value: string) => void}
+          buttons={[
+            {
+              value: 'stockist',
+              label: 'Stockist Orders',
+              icon: 'store',
+              checkedColor: '#FFFFFF',
+              uncheckedColor: '#2563EB',
+            },
+            {
+              value: 'direct',
+              label: 'Direct Orders',
+              icon: 'cart',
+              checkedColor: '#FFFFFF',
+              uncheckedColor: '#00D4AA',
+            },
+          ]}
+          style={styles.segmentedButtons}
+        />
+      </View>
+
       <FlatList
-        data={orders}
+        data={filteredOrders}
         renderItem={renderOrderItem}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
@@ -240,8 +298,10 @@ const OrdersScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Icon name="local-shipping" size={80} color="#D1D5DB" />
-            <Text style={styles.emptyText}>No orders available</Text>
+            <Icon name="local-shipping" size={80} color="#2563EB" />
+            <Text style={styles.emptyText}>
+              No {activeOrderType === 'stockist' ? 'stockist' : 'direct'} orders available
+            </Text>
             <Text style={styles.emptySubtext}>
               Pull to refresh for new orders
             </Text>
@@ -258,12 +318,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   header: {
-    backgroundColor: '#4367b6ff',
+    backgroundColor: '#2563EB',
     paddingTop: 50,
     paddingBottom: 0,
   },
   headerBackground: {
-    backgroundColor: '#4367b6ff',
+    backgroundColor: '#2563EB',
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     paddingHorizontal: 20,
@@ -282,111 +342,134 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   greetingText: {
-    fontSize: 16,
-    color: '#DBEAFE',
-    fontWeight: '500',
+    fontSize: 18,
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   userName: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginTop: 2,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: '#DBEAFE',
+    fontSize: 16,
+    color: '#FFFFFF',
     fontWeight: '500',
-    lineHeight: 20,
+    lineHeight: 22,
   },
   statsContainer: {
     alignItems: 'flex-end',
   },
   statCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 20,
+    padding: 20,
     alignItems: 'center',
-    minWidth: 80,
+    minWidth: 90,
   },
   statIconContainer: {
-    marginBottom: 8,
+    marginBottom: 10,
   },
   statContent: {
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
   statLabel: {
-    fontSize: 12,
-    color: '#DBEAFE',
-    fontWeight: '500',
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  tabContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  segmentedButtons: {
+    backgroundColor: '#F0F0F0',
+    borderRadius: 16,
   },
   listContainer: {
     padding: 20,
   },
   orderCard: {
     marginBottom: 16,
-    borderRadius: 16,
+    borderRadius: 20,
     backgroundColor: '#FFFFFF',
-    padding: 20,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#2563EB10',
   },
   orderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    alignItems: 'flex-start',
+    marginBottom: 20,
   },
   orderNumberContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   orderNumber: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#1F2937',
-    marginLeft: 8,
+    marginLeft: 10,
+  },
+  orderTypeContainer: {
+    alignItems: 'flex-end',
   },
   statusChip: {
-    height: 32,
-    borderRadius: 16,
+    height: 36,
+    borderRadius: 18,
+    marginBottom: 6,
+    borderWidth: 2,
+  },
+  typeChip: {
+    height: 35,
+    borderRadius: 14,
+    borderWidth: 2,
   },
   customerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   customerText: {
-    marginLeft: 8,
-    fontSize: 14,
+    marginLeft: 10,
+    fontSize: 16,
     color: '#374151',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   addressContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   addressRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
   addressLabel: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#6B7280',
-    marginLeft: 8,
-    marginRight: 8,
-    minWidth: 60,
-    fontWeight: '500',
+    marginLeft: 10,
+    marginRight: 10,
+    minWidth: 70,
+    fontWeight: '600',
   },
   addressText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 14,
     color: '#374151',
-    lineHeight: 16,
+    lineHeight: 20,
+    fontWeight: '500',
   },
   orderDetails: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   detailRow: {
     flexDirection: 'row',
@@ -398,16 +481,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detailLabel: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#6B7280',
-    marginLeft: 4,
-    marginRight: 4,
-    fontWeight: '500',
+    marginLeft: 6,
+    marginRight: 6,
+    fontWeight: '600',
   },
   detailValue: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#1F2937',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   actionButtons: {
     flexDirection: 'row',
@@ -415,27 +498,28 @@ const styles = StyleSheet.create({
   },
   viewButton: {
     flex: 1,
-    marginRight: 8,
-    borderRadius: 12,
-    borderColor: '#E5E7EB',
+    marginRight: 10,
+    borderRadius: 16,
+    borderColor: '#2563EB',
+    borderWidth: 2,
   },
   acceptButton: {
     flex: 1,
-    marginLeft: 8,
-    borderRadius: 12,
-    backgroundColor: '#10B981',
+    marginLeft: 10,
+    borderRadius: 16,
+    backgroundColor: '#00D4AA',
   },
   buttonContent: {
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
   buttonLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#2563EB',
   },
   acceptButtonLabel: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
   loadingContainer: {
@@ -445,10 +529,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#6B7280',
-    fontWeight: '500',
+    marginTop: 20,
+    fontSize: 18,
+    color: '#2563EB',
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
@@ -457,16 +541,17 @@ const styles = StyleSheet.create({
     paddingVertical: 80,
   },
   emptyText: {
-    fontSize: 18,
-    color: '#6B7280',
-    marginTop: 16,
-    fontWeight: '600',
+    fontSize: 20,
+    color: '#2563EB',
+    marginTop: 20,
+    fontWeight: '700',
   },
   emptySubtext: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#9CA3AF',
-    marginTop: 8,
+    marginTop: 10,
     textAlign: 'center',
+    fontWeight: '500',
   },
 });
 

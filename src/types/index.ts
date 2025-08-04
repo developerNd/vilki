@@ -42,6 +42,7 @@ export interface Order {
   assignedTo?: string;
   distance?: number;
   estimatedTime?: number;
+  orderType?: 'stockist' | 'direct'; // New field to distinguish order types
 }
 
 export interface OrderItem {
