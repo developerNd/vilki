@@ -259,7 +259,21 @@ const MyOrdersScreen: React.FC = () => {
               <Text style={styles.detailValue}>₹{item.totalAmount || item.total_amount}</Text>
             </View>
           </View>
-          {item.acceptedAt && (
+          {(item.deliveryCharges !== undefined) && (
+            <View style={styles.detailRow}>
+              <View style={styles.detailItem}>
+                <Icon name="local-shipping" size={12} color={item.deliveryCharges > 0 ? "#F59E0B" : "#10B981"} />
+                <Text style={styles.detailLabel}>Delivery:</Text>
+                <Text style={item.deliveryCharges > 0 ? styles.deliveryChargeValue : styles.freeDeliveryValue}>
+                  {item.deliveryCharges > 0 ? `₹${item.deliveryCharges}` : 'FREE'}
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
+        
+        {item.acceptedAt && (
+          <View style={styles.orderDetails}>
             <View style={styles.detailRow}>
               <View style={styles.detailItem}>
                 <Icon name="schedule" size={14} color="#6B7280" />
@@ -269,8 +283,8 @@ const MyOrdersScreen: React.FC = () => {
                 </Text>
               </View>
             </View>
-          )}
-        </View>
+          </View>
+        )}
 
         <View style={styles.actionButtons}>
           <Button
@@ -599,6 +613,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginHorizontal: 2,
   },
   detailLabel: {
     fontSize: 12,
@@ -610,6 +625,16 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 12,
     color: '#1F2937',
+    fontWeight: '600',
+  },
+  deliveryChargeValue: {
+    fontSize: 12,
+    color: '#EF4444',
+    fontWeight: '600',
+  },
+  freeDeliveryValue: {
+    fontSize: 12,
+    color: '#10B981',
     fontWeight: '600',
   },
   actionButtons: {

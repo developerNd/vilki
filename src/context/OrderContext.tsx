@@ -56,7 +56,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         { id: '1', name: 'Paracetamol 500mg', quantity: 2, price: 50, category: 'Pain Relief' },
         { id: '2', name: 'Vitamin C 1000mg', quantity: 1, price: 200, category: 'Vitamins' },
       ],
-      totalAmount: 300,
+      totalAmount: 325,
+      billAmount: 300,
+      deliveryCharges: 25,
+      hasExceededFreeDeliveryLimit: true,
       status: OrderStatus.ACCEPTED,
       createdAt: '2024-01-15T10:00:00Z',
       acceptedAt: '2024-01-15T10:30:00Z',
@@ -114,6 +117,9 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         { id: '5', name: 'Cetirizine 10mg', quantity: 2, price: 80, category: 'Allergy' },
       ],
       totalAmount: 280,
+      billAmount: 280,
+      deliveryCharges: 0,
+      hasExceededFreeDeliveryLimit: false,
       status: OrderStatus.ACCEPTED,
       createdAt: '2024-01-15T12:00:00Z',
       acceptedAt: '2024-01-15T12:15:00Z',
@@ -199,6 +205,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         console.log('📦 Stockist orders response:', stockistResponse.value);
         const stockistData = stockistResponse.value?.data || stockistResponse.value;
         if (stockistData && Array.isArray(stockistData)) {
+          console.log('🔍 Sample stockist order data:', stockistData[0]); // Debug log
           const stockistOrders = stockistData.map((order: any) => ({
             // Map stockist order structure to match expected Order interface
             id: order.id.toString(),
@@ -218,7 +225,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               instructions: order.address?.addressLine2 || ''
             },
             items: order.order_products || [],
-            totalAmount: order.total_amount,
+            totalAmount: order.totalAmount || order.total_amount,
+            billAmount: order.billAmount,
+            deliveryCharges: order.deliveryCharges,
+            hasExceededFreeDeliveryLimit: order.hasExceededFreeDeliveryLimit,
             status: order.status as any,
             createdAt: order.createdAt,
             updatedAt: order.updatedAt,
@@ -266,7 +276,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               instructions: ''
             },
             items: [], // Empty array since items not provided in direct orders
-            totalAmount: order.billAmount,
+            totalAmount: order.totalAmount || order.billAmount,
+            billAmount: order.billAmount,
+            deliveryCharges: order.deliveryCharges,
+            hasExceededFreeDeliveryLimit: order.hasExceededFreeDeliveryLimit,
             status: order.status as any, // Cast to OrderStatus
             createdAt: order.createdAt,
             updatedAt: order.updatedAt,
@@ -327,6 +340,11 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (Array.isArray(stockistData)) {
           const stockistOrders = stockistData.map((order: any) => ({
             ...order,
+            id: order.id?.toString() || order.id,
+            totalAmount: order.totalAmount || order.total_amount,
+            billAmount: order.billAmount,
+            deliveryCharges: order.deliveryCharges,
+            hasExceededFreeDeliveryLimit: order.hasExceededFreeDeliveryLimit,
             orderType: 'stockist'
           }));
           allMyOrders = [...allMyOrders, ...stockistOrders];
@@ -361,7 +379,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                instructions: ''
              },
              items: [],
-             totalAmount: order.billAmount,
+             totalAmount: order.totalAmount || order.billAmount,
+             billAmount: order.billAmount,
+             deliveryCharges: order.deliveryCharges,
+             hasExceededFreeDeliveryLimit: order.hasExceededFreeDeliveryLimit,
              status: order.status as any,
              createdAt: order.createdAt,
              updatedAt: order.updatedAt,

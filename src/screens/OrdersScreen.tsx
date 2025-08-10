@@ -190,6 +190,17 @@ const OrdersScreen: React.FC = () => {
               <Text style={styles.detailValue}>₹{item.totalAmount || item.total_amount}</Text>
             </View>
           </View>
+          {(item.deliveryCharges !== undefined) && (
+            <View style={styles.detailRow}>
+              <View style={styles.detailItem}>
+                <Icon name="local-shipping" size={14} color={item.deliveryCharges > 0 ? "#F59E0B" : "#10B981"} />
+                <Text style={styles.detailLabel}>Delivery:</Text>
+                <Text style={item.deliveryCharges > 0 ? styles.deliveryChargeValue : styles.freeDeliveryValue}>
+                  {item.deliveryCharges > 0 ? `₹${item.deliveryCharges}` : 'FREE'}
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
 
         <View style={styles.actionButtons}>
@@ -481,11 +492,13 @@ const styles = StyleSheet.create({
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 8,
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginHorizontal: 4,
   },
   detailLabel: {
     fontSize: 14,
@@ -498,6 +511,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1F2937',
     fontWeight: '700',
+  },
+  deliveryChargeValue: {
+    fontSize: 14,
+    color: '#EF4444',
+    fontWeight: '600',
+  },
+  freeDeliveryValue: {
+    fontSize: 14,
+    color: '#10B981',
+    fontWeight: '600',
   },
   actionButtons: {
     flexDirection: 'row',

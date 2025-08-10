@@ -469,6 +469,29 @@ const OrderDetailsScreen: React.FC = () => {
               </View>
             ))}
             <Divider style={styles.itemDivider} />
+            
+            {/* Show delivery charges breakdown if available */}
+            {(order.deliveryCharges !== undefined || order.billAmount) && (
+              <>
+                <View style={styles.billingBreakdown}>
+                  <View style={styles.breakdownRow}>
+                    <Text style={styles.breakdownLabel}>Product Total:</Text>
+                    <Text style={styles.breakdownValue}>₹{order.billAmount || (order.totalAmount - (order.deliveryCharges || 0))}</Text>
+                  </View>
+                  <View style={styles.breakdownRow}>
+                    <Text style={styles.breakdownLabel}>Delivery Charges:</Text>
+                    <Text style={[styles.breakdownValue, order.deliveryCharges > 0 ? styles.chargeAmount : styles.freeAmount]}>
+                      {order.deliveryCharges > 0 ? `₹${order.deliveryCharges}` : 'FREE'}
+                    </Text>
+                  </View>
+                  {order.hasExceededFreeDeliveryLimit && (
+                    <Text style={styles.deliveryNote}>Free delivery limit exceeded</Text>
+                  )}
+                </View>
+                <Divider style={styles.itemDivider} />
+              </>
+            )}
+            
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Total Amount:</Text>
               <Text style={styles.totalAmount}>₹{order.totalAmount || order.total_amount}</Text>
@@ -819,6 +842,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#2563EB',
+  },
+  billingBreakdown: {
+    paddingVertical: 8,
+  },
+  breakdownRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  breakdownLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  breakdownValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#1F2937',
+  },
+  chargeAmount: {
+    color: '#EF4444',
+  },
+  freeAmount: {
+    color: '#10B981',
+    fontWeight: '600',
+  },
+  deliveryNote: {
+    fontSize: 12,
+    color: '#F59E0B',
+    fontStyle: 'italic',
+    textAlign: 'right',
+    marginTop: 4,
   },
   detailRow: {
     flexDirection: 'row',
