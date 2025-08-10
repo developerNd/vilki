@@ -16,11 +16,14 @@ import {
   useTheme,
   ActivityIndicator,
   Surface,
+  TextInput,
+  Modal,
+  Portal,
 } from 'react-native-paper';
 import { useOrders } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NavigationProp } from '../types/navigation';
 import { OrderStatus } from '../types';
 
@@ -30,10 +33,21 @@ const MyOrdersScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const theme = useTheme();
   const [refreshing, setRefreshing] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   useEffect(() => {
     fetchMyOrders();
   }, []);
+
+  // Refresh orders when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchMyOrders();
+    }, [])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -46,20 +60,83 @@ const MyOrdersScreen: React.FC = () => {
   };
 
   const handleUpdateStatus = async (order: any, newStatus: string) => {
+    // If delivering direct order, show verification modal
+    if ((newStatus === 'DELIVERED' || newStatus === 'delivered') && order.orderType === 'direct') {
+      setSelectedOrder(order);
+      setShowVerificationModal(true);
+      return;
+    }
+
     Alert.alert(
       'Update Status',
-      `Do you want to mark order ${order.slug} as ${getStatusText(newStatus)}?`,
+      `Do you want to mark this ${order.orderType === 'direct' ? 'direct order' : `order ${order.orderNumber || order.slug}`} as ${getStatusText(newStatus)}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Update',
           onPress: async () => {
-            await updateOrderStatus(order.id, newStatus as OrderStatus);
-            Alert.alert('Success', `Order status updated to ${getStatusText(newStatus)}`);
+            try {
+              await updateOrderStatus(order.id, newStatus as OrderStatus, order.orderType);
+              Alert.alert('Success', `Order status updated to ${getStatusText(newStatus)}`);
+              // Refresh orders after successful update
+              setTimeout(() => {
+                fetchMyOrders();
+              }, 500);
+            } catch (error: any) {
+              console.error('Error updating order status:', error);
+              Alert.alert('Error', error.message || 'Failed to update order status');
+            }
           },
         },
       ]
     );
+  };
+
+  const handleVerifyAndDeliver = async () => {
+    if (!verificationCode.trim()) {
+      Alert.alert('Error', 'Please enter the verification code');
+      return;
+    }
+
+    if (!selectedOrder) {
+      Alert.alert('Error', 'No order selected');
+      return;
+    }
+
+    // Get the last 6 digits of the order ID
+    const orderId = selectedOrder.orderNumber || selectedOrder.slug || selectedOrder.orderId;
+    const orderIdStr = orderId.toString();
+    const last6Digits = orderIdStr.length >= 6 ? orderIdStr.slice(-6) : orderIdStr;
+    
+    if (verificationCode.trim() !== last6Digits) {
+      Alert.alert('Error', 'Invalid verification code. Please check the last 6 digits of the order ID.');
+      setVerificationCode('');
+      return;
+    }
+
+    setVerifying(true);
+    try {
+      await updateOrderStatus(selectedOrder.id, 'DELIVERED' as OrderStatus, selectedOrder.orderType);
+      Alert.alert('Success', 'Order delivered successfully!');
+      setVerificationCode('');
+      setShowVerificationModal(false);
+      setSelectedOrder(null);
+      // Refresh orders after successful update
+      setTimeout(() => {
+        fetchMyOrders();
+      }, 500);
+    } catch (error: any) {
+      console.error('Error delivering order:', error);
+      Alert.alert('Error', error.message || 'Failed to deliver order');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleCancelVerification = () => {
+    setShowVerificationModal(false);
+    setVerificationCode('');
+    setSelectedOrder(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -99,8 +176,13 @@ const MyOrdersScreen: React.FC = () => {
   const getNextStatus = (currentStatus: string) => {
     const statusFlow = {
       'ASSIGNED': 'PICKED_UP',
-      'PICKED_UP': 'IN_TRANSIT',
+      'assigned': 'PICKED_UP', // Handle lowercase
+      'ACCEPTED': 'PICKED_UP', // Handle uppercase accepted
+      'accepted': 'PICKED_UP', // Handle lowercase accepted
+      'PICKED_UP': 'DELIVERED',
+      'picked': 'DELIVERED', // Handle lowercase
       'IN_TRANSIT': 'DELIVERED',
+      'in_transit': 'DELIVERED', // Handle lowercase
     };
     return statusFlow[currentStatus as keyof typeof statusFlow] || null;
   };
@@ -113,20 +195,43 @@ const MyOrdersScreen: React.FC = () => {
         <View style={styles.orderHeader}>
           <View style={styles.orderNumberContainer}>
             <Icon name="receipt" size={20} color="#2563EB" />
-            <Title style={styles.orderNumber}>{item.slug}</Title>
+            <Title style={styles.orderNumber}>
+              {item.orderType === 'direct' ? 'Direct Order' : `Order #${item.orderNumber || item.slug}`}
+            </Title>
           </View>
-          <Chip
-            mode="outlined"
-            textStyle={{ color: getStatusColor(item.status), fontWeight: '600' }}
-            style={[styles.statusChip, { borderColor: getStatusColor(item.status), backgroundColor: `${getStatusColor(item.status)}10` }]}
-          >
-            {getStatusText(item.status)}
-          </Chip>
+          <View style={styles.chipContainer}>
+            <Chip
+              mode="outlined"
+              textStyle={{ color: getStatusColor(item.status), fontWeight: '600' }}
+              style={[styles.statusChip, { borderColor: getStatusColor(item.status), backgroundColor: `${getStatusColor(item.status)}10` }]}
+            >
+              {getStatusText(item.status)}
+            </Chip>
+            <Chip
+              mode="outlined"
+              textStyle={{ 
+                color: item.orderType === 'stockist' ? '#2563EB' : '#00D4AA', 
+                fontWeight: '600',
+                fontSize: 11
+              }}
+              style={[styles.typeChip, { 
+                borderColor: item.orderType === 'stockist' ? '#2563EB' : '#00D4AA', 
+                backgroundColor: item.orderType === 'stockist' ? '#2563EB20' : '#00D4AA20' 
+              }]}
+            >
+              {item.orderType === 'stockist' ? 'Stockist' : 'Direct'}
+            </Chip>
+          </View>
         </View>
 
         <View style={styles.customerInfo}>
           <Icon name="person" size={16} color="#6B7280" />
-          <Text style={styles.customerText}>{item.consumerName}</Text>
+          <Text style={styles.customerText}>
+            {item.customerName || item.consumerName}
+            {item.orderType === 'stockist' && item.seller?.name && (
+              <Text style={styles.sellerInfo}> • From {item.seller.name}</Text>
+            )}
+          </Text>
         </View>
 
         <View style={styles.addressContainer}>
@@ -134,7 +239,7 @@ const MyOrdersScreen: React.FC = () => {
             <Icon name="location-on" size={16} color="#EF4444" />
             <Text style={styles.addressLabel}>Address:</Text>
             <Text style={styles.addressText} numberOfLines={2}>
-              {item.address?.addressLine1 ?? 'N/A'}
+              {item.deliveryAddress?.address ?? item.address?.addressLine1 ?? 'N/A'}
             </Text>
           </View>
         </View>
@@ -145,13 +250,13 @@ const MyOrdersScreen: React.FC = () => {
               <Icon name="inventory" size={14} color="#6B7280" />
               <Text style={styles.detailLabel}>Items:</Text>
               <Text style={styles.detailValue}>
-                {(item.order_products?.length ?? 0)} items
+                {(item.items?.length ?? item.order_products?.length ?? 0)} items
               </Text>
             </View>
             <View style={styles.detailItem}>
               <Icon name="payments" size={14} color="#6B7280" />
               <Text style={styles.detailLabel}>Amount:</Text>
-              <Text style={styles.detailValue}>₹{item.total_amount}</Text>
+              <Text style={styles.detailValue}>₹{item.totalAmount || item.total_amount}</Text>
             </View>
           </View>
           {item.acceptedAt && (
@@ -182,12 +287,19 @@ const MyOrdersScreen: React.FC = () => {
             <Button
               mode="contained"
               onPress={() => handleUpdateStatus(item, nextStatus)}
-              style={styles.updateButton}
+              style={[
+                styles.updateButton,
+                (nextStatus === 'PICKED_UP' || nextStatus === 'picked' || nextStatus === 'PICKED') && { backgroundColor: '#F59E0B' },
+                (nextStatus === 'DELIVERED' || nextStatus === 'delivered') && { backgroundColor: '#10B981' }
+              ]}
               contentStyle={styles.buttonContent}
               labelStyle={styles.updateButtonLabel}
-              icon="check-circle"
+              icon={(nextStatus === 'PICKED_UP' || nextStatus === 'picked' || nextStatus === 'PICKED') ? 'package-variant' : 
+                    (nextStatus === 'DELIVERED' || nextStatus === 'delivered') ? 'truck-delivery' : 'check-circle'}
             >
-              Mark as {getStatusText(nextStatus)}
+              {(nextStatus === 'PICKED_UP' || nextStatus === 'picked' || nextStatus === 'PICKED') ? 'Mark as Picked Up' : 
+               (nextStatus === 'DELIVERED' || nextStatus === 'delivered') ? 'Mark as Delivered' : 
+               `Mark as ${getStatusText(nextStatus)}`}
             </Button>
           )}
         </View>
@@ -259,6 +371,76 @@ const MyOrdersScreen: React.FC = () => {
           </View>
         }
       />
+
+      {/* Verification Modal */}
+      <Portal>
+        <Modal
+          visible={showVerificationModal}
+          onDismiss={handleCancelVerification}
+          contentContainerStyle={styles.modalContainer}
+        >
+          <Surface style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Icon name="verified" size={32} color="#10B981" />
+              <Title style={styles.modalTitle}>Delivery Verification</Title>
+            </View>
+            
+            <Text style={styles.modalSubtitle}>
+              Ask the customer for the last 6 digits of their order ID to verify delivery:
+            </Text>
+            
+            {selectedOrder && (
+              <View style={styles.verificationCodeDisplay}>
+                <Text style={styles.verificationCodeLabel}>Order ID:</Text>
+                <Text style={styles.verificationCodeText}>
+                  {(selectedOrder.orderNumber || selectedOrder.slug || selectedOrder.orderId).toString().length >= 6 
+                    ? (selectedOrder.orderNumber || selectedOrder.slug || selectedOrder.orderId).toString().slice(0, -6) + '******'
+                    : '******'}
+                </Text>
+                <Text style={styles.verificationCodeHint}>
+                  Ask the customer to provide the last 6 digits of their order ID
+                </Text>
+              </View>
+            )}
+
+            <TextInput
+              mode="outlined"
+              label="Verification Code"
+              value={verificationCode}
+              onChangeText={setVerificationCode}
+              keyboardType="numeric"
+              maxLength={6}
+              style={styles.verificationInput}
+              placeholder="Enter last 6 digits"
+              autoFocus
+            />
+
+            <View style={styles.modalButtons}>
+              <Button
+                mode="outlined"
+                onPress={handleCancelVerification}
+                style={styles.cancelButton}
+                contentStyle={styles.modalButtonContent}
+                labelStyle={styles.cancelButtonLabel}
+              >
+                Cancel
+              </Button>
+              <Button
+                mode="contained"
+                onPress={handleVerifyAndDeliver}
+                loading={verifying}
+                disabled={verifying || !verificationCode.trim()}
+                style={styles.verifyButton}
+                contentStyle={styles.modalButtonContent}
+                labelStyle={styles.verifyButtonLabel}
+                icon={verifying ? undefined : 'check-circle'}
+              >
+                Verify & Deliver
+              </Button>
+            </View>
+          </Surface>
+        </Modal>
+      </Portal>
     </View>
   );
 };
@@ -363,6 +545,15 @@ const styles = StyleSheet.create({
   statusChip: {
     height: 32,
     borderRadius: 16,
+    marginBottom: 4,
+  },
+  chipContainer: {
+    alignItems: 'flex-end',
+  },
+  typeChip: {
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
   },
   customerInfo: {
     flexDirection: 'row',
@@ -479,6 +670,99 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginTop: 8,
     textAlign: 'center',
+  },
+  sellerInfo: {
+    fontSize: 11,
+    color: '#6B7280',
+    fontStyle: 'italic',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    elevation: 8,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginTop: 8,
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 22,
+  },
+  verificationCodeDisplay: {
+    backgroundColor: '#F3F4F6',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  verificationCodeLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  verificationCodeText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  verificationCodeHint: {
+    fontSize: 14,
+    color: '#10B981',
+    fontWeight: '600',
+  },
+  verificationInput: {
+    marginBottom: 20,
+    backgroundColor: '#FFFFFF',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  cancelButton: {
+    flex: 1,
+    marginRight: 8,
+    borderRadius: 12,
+    borderColor: '#6B7280',
+  },
+  verifyButton: {
+    flex: 1,
+    marginLeft: 8,
+    borderRadius: 12,
+    backgroundColor: '#10B981',
+  },
+  modalButtonContent: {
+    paddingVertical: 12,
+  },
+  cancelButtonLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  verifyButtonLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });
 

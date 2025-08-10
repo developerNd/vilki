@@ -47,13 +47,13 @@ const OrdersScreen: React.FC = () => {
   const handleAcceptOrder = (order: any) => {
     Alert.alert(
       'Accept Order',
-      `Do you want to accept order ${order.slug}?`,
+      `Do you want to accept this ${order.orderType === 'direct' ? 'direct order' : `order ${order.orderNumber || order.slug}`}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Accept',
           onPress: async () => {
-            await acceptOrder(order.id, deliveryPartner);
+            await acceptOrder(order.id, deliveryPartner, order.orderType);
             Alert.alert('Success', 'Order accepted successfully!');
           },
         },
@@ -126,7 +126,9 @@ const OrdersScreen: React.FC = () => {
         <View style={styles.orderHeader}>
           <View style={styles.orderNumberContainer}>
             <Icon name="receipt" size={24} color="#2563EB" />
-            <Title style={styles.orderNumber}>{item.slug}</Title>
+            <Title style={styles.orderNumber}>
+              {item.orderType === 'direct' ? 'Direct Order' : `Order #${item.orderNumber || item.slug}`}
+            </Title>
           </View>
           <View style={styles.orderTypeContainer}>
             <Chip
@@ -139,32 +141,37 @@ const OrdersScreen: React.FC = () => {
             <Chip
               mode="outlined"
               textStyle={{ 
-                color: activeOrderType === 'stockist' ? '#2563EB' : '#00D4AA', 
+                color: item.orderType === 'stockist' ? '#2563EB' : '#00D4AA', 
                 fontWeight: '700',
                 fontSize: 11
               }}
               style={[styles.typeChip, { 
-                borderColor: activeOrderType === 'stockist' ? '#2563EB' : '#00D4AA', 
-                backgroundColor: activeOrderType === 'stockist' ? '#2563EB20' : '#00D4AA20' 
+                borderColor: item.orderType === 'stockist' ? '#2563EB' : '#00D4AA', 
+                backgroundColor: item.orderType === 'stockist' ? '#2563EB20' : '#00D4AA20' 
               }]}
             >
-              {activeOrderType === 'stockist' ? 'Stockist' : 'Direct'}
+              {item.orderType === 'stockist' ? 'Stockist' : 'Direct'}
             </Chip>
           </View>
         </View>
 
         <View style={styles.customerInfo}>
           <Icon name="person" size={18} color="#2563EB" />
-          <Text style={styles.customerText}>{item.consumerName}</Text>
+          <Text style={styles.customerText}>
+            {item.customerName || item.consumerName}
+            {item.orderType === 'stockist' && item.seller?.name && (
+              <Text style={styles.sellerInfo}> • From {item.seller.name}</Text>
+            )}
+          </Text>
         </View>
 
         <View style={styles.addressContainer}>
           <View style={styles.addressRow}>
             <Icon name="location-on" size={18} color="#FF4757" />
             <Text style={styles.addressLabel}>Address:</Text>
-            <Text style={styles.addressText} numberOfLines={2}>
-              {item.address?.addressLine1 ?? 'N/A'}
-            </Text>
+                          <Text style={styles.addressText} numberOfLines={2}>
+                {item.deliveryAddress?.address ?? item.address?.addressLine1 ?? 'N/A'}
+              </Text>
           </View>
         </View>
 
@@ -174,13 +181,13 @@ const OrdersScreen: React.FC = () => {
               <Icon name="inventory" size={16} color="#2563EB" />
               <Text style={styles.detailLabel}>Items:</Text>
               <Text style={styles.detailValue}>
-                {(item.order_products?.length ?? 0)} items
+                {(item.items?.length ?? item.order_products?.length ?? 0)} items
               </Text>
             </View>
             <View style={styles.detailItem}>
               <Icon name="payments" size={16} color="#00D4AA" />
               <Text style={styles.detailLabel}>Amount:</Text>
-              <Text style={styles.detailValue}>₹{item.total_amount}</Text>
+              <Text style={styles.detailValue}>₹{item.totalAmount || item.total_amount}</Text>
             </View>
           </View>
         </View>
@@ -552,6 +559,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
     textAlign: 'center',
     fontWeight: '500',
+  },
+  sellerInfo: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontStyle: 'italic',
   },
 });
 
